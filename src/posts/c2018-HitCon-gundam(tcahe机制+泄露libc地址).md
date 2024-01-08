@@ -48,7 +48,7 @@
 
 - 结构图
 
-![机制](C:\Users\61428\Desktop\wp合集\pwn\gundam\img\tcahe结构体.png)
+![机制](https://awaqwqa.github.io/img/tcahe/tcahe结构体.png)
 
 #### 利用tcache泄露地址
 
