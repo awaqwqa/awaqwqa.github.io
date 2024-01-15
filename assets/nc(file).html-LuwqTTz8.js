@@ -1,4 +1,4 @@
-import{_ as n}from"./plugin-vue_export-helper-x3n3nnut.js";import{o as s,c as a,e}from"./app-kCY93WVh.js";const i={},l=e(`<h1 id="nc签到题-常用指令绕过" tabindex="-1"><a class="header-anchor" href="#nc签到题-常用指令绕过" aria-hidden="true">#</a> nc签到题(常用指令绕过)</h1><blockquote><p>第一次拿到这个附件 丢进ida里面没用 后缀改为.zip 也没有看见什么东西 一筹莫展 拿这玩意丢进虚拟机里面跑了一下 发现了import无效指令 所以才改后缀为py 才看见代码</p></blockquote><div class="language-python line-numbers-mode" data-ext="py"><pre class="language-python"><code><span class="token keyword">import</span> os
+import{_ as n}from"./plugin-vue_export-helper-x3n3nnut.js";import{o as s,c as a,e}from"./app-OpwNQHC5.js";const i={},l=e(`<h1 id="nc签到题-常用指令绕过" tabindex="-1"><a class="header-anchor" href="#nc签到题-常用指令绕过" aria-hidden="true">#</a> nc签到题(常用指令绕过)</h1><blockquote><p>第一次拿到这个附件 丢进ida里面没用 后缀改为.zip 也没有看见什么东西 一筹莫展 拿这玩意丢进虚拟机里面跑了一下 发现了import无效指令 所以才改后缀为py 才看见代码</p></blockquote><div class="language-python line-numbers-mode" data-ext="py"><pre class="language-python"><code><span class="token keyword">import</span> os
 
 art <span class="token operator">=</span> <span class="token triple-quoted-string string">&#39;&#39;&#39;
 
