@@ -218,7 +218,160 @@ public class dick {
       }
         
   }
-  
   ```
+  
+
+#### 修改类的字段
+
+> 这里的字段指的是类中定义的成员属性<br>然后这里修改非静态的字段用到的是java.choose函数 这个函数第一个`参数`就是我们要遍历的类<br>随后我们放入一个类似于回调函数的对象进去<br>这个对象包含:
+>
+> - `onMatch`
+>   - 这个key对应的value是一个`callback`函数 这里会去找到程序中所有实现了指定类的对象 也就是找到所有类型为这个类的对象
+>   - 相当于遍历 没找到一个对象就会触发这个callback 所以在callback函数中我们的操作对象是每一个对象
+> - `onCompete`
+>   - 这个key对应的value也是一个`callback`函数 在整个搜索流程完成的时候会调用
+
+```java
+import java.lang.System.Logger;
+
+public class Student {
+    public String name;
+    public int age;
+    private int number;
+    private static String nickname = "Flags";
+    public Student (String name,int age){
+        this.age = age;
+        this.name = name;
+    }
+    public void PrintStudent(){
+        this.number = 888;
+        Log.d(this.name,"nickName:"+this.nickname+"number:"+this.number);
+    }
+     public static void main(String[] args) {
+        System.out.println("Hello World");
+    }
+}
+```
+
+- 我们这里选择修改`nickname`这个属性
+
+```js
+//修改类字段
+function hookTest4()
+{
+    //获取java类
+    var student=Java.use("com.example.hookdemo01.Student");
+     //修改静态字段
+    student.nickname.value="GuiShouFlags";
+    console.log(student.nickname.value);
+    
+    //修改非静态字段
+    Java.choose("com.example.hookdemo01.Student",{
+        //每遍历一个对象都会调用onMatch
+        onMatch:function(obj)
+        {
+            //修改每个对象的字段
+            obj.number.value=999;
+            console.log(obj.number.value);
+            
+            //字段名和函数名相同需要加下划线
+            //obj._number.value=999;
+        },
+        //遍历完成后调用onComplete
+        onComplete:function()
+        {
+
+        }
+    }); 
+}
+```
+
+#### 枚举所有的类和方法
+
+> 这里很多前提知识
+
+```js
+function hookTest6()
+{
+    //枚举已经加载的类 异步方式
+    Java.enumerateLoadedClasses({
+        //每枚举一个类调用一次
+        onMatch:function(name,handler)
+        {
+            //对类名进行过滤 
+            if(name.indexOf("com.example.hookdemo01")!=-1)
+            {
+                //输出类名
+                console.log(name);
+
+                //根据类名获取java类
+                var clz=Java.use(name);
+                //获取类的所有方法
+                var methods=clz.class.getDeclaredMethods();
+                
+                //循环输出所有方法
+                for(var i=0;i<methods.length();i++)
+                {
+                    console.log(methods[i]);
+                }
+            }
+            
+        },
+        //枚举完成以后调用
+        onComplete:function()
+        {
+
+        }
+    });  
+    
+    //枚举已经加载的类 同步方式
+    var classes=Java.enumerateClassLoadersSync();
+    for(var i=0;i<methods.classes();i++)
+    {
+        if(classes[i].indexOf("com.example.hookdemo01")!=-1)
+        {
+            console.log(classes[i]);
+            //枚举方法同上...
+        }
+    }
 
   
+}
+
+```
+
+#### hook so中的函数
+
+> 这里如果这个函数不是`导出函数`则我们通过偏移来获取这个函数<br>这个步骤 就是算偏移嘛(应该 错了别打我) libcBaseAddr + offset
+
+```js
+//hook无导出函数
+function hookTest9()
+{
+    //so名称
+    var so_name="libnative-lib.so";
+    //要Hook的函数偏移
+    var fun_off=0x7078;
+
+   //加载到内存后，函数地址=so地址+函数偏移
+   var so_base_addr=Module.findBaseAddress(so_name);
+   var add_func=parseInt(so_base_addr,16)+fun_off;
+   var ptr_fun=new NativePointer(add_func);
+
+ 
+    Interceptor.attach(ptr_fun,{
+        //在hook函数之前执行
+        onEnter:function(args)
+        {
+            console.log("hook enter");
+        },
+        //在hook函数之后执行
+        onLeave:function(retval)
+        {
+            console.log("hook leaver");
+        }
+
+    });     
+}
+```
+
