@@ -1,3 +1,12 @@
+---
+date: 2024-2-15
+tag:
+  - re
+  - ctf
+---
+
+
+
 # HgameWeek2Babyre
 
 > 看上去应该是简单的hh 
