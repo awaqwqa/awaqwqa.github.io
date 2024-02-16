@@ -1,3 +1,12 @@
+---
+date: 2024-2-16
+tag:
+  - pwn
+  - heap
+---
+
+
+
 # 深入学习堆结构
 
 > 做hgame的时候 有点做不动heap的题 所以来学习一下基本功<br>学习文章:[【pwn】学pwn日记（堆结构学习）（随缘更新）_pwn 堆特性-CSDN博客](https://blog.csdn.net/woodwhale/article/details/119832041)
