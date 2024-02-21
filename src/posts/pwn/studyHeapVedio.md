@@ -1,11 +1,6 @@
 ---
 date:2024-2-17
-tag:
-  - pwn
-  - heap
 ---
-
-
 
 # NTUSTISC - Pwn 2学习笔记
 
