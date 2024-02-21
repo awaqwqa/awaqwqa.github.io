@@ -14,7 +14,7 @@ tag:
 
 - 运行PLT[1]
 
-  > 由于我是是第一次的调用 所以GOT[3]的内容为:`PLT[1]`中`push reloc_arg;`指令的地址 也就是会自动跳转PLT[0]去完成绑定 并且 将reloc_arg参数作为参数<br>这里PLT[N]与GOT[2+N]一 一对应
+  > 由于我是是第一次的调用 所以GOT[3]的内容为:`PLT[1]`中`push reloc_arg;`指令的地址 也就是会执行`push reloc_arg `和`jmp plt[0]`自动跳转PLT[0]去完成绑定 并且 将reloc_arg参数作为参数<br>这里PLT[N]与GOT[2+N]一 一对应
 
   ```assembly
   jmp [GOT[3]]; 
