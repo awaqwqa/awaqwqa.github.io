@@ -1,6 +1,6 @@
 ---
 date:2024-2-22
-tage:
+tag:
   - pwn
   - heap
 ---
