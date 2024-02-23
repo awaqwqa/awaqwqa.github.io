@@ -3,9 +3,6 @@ date: 2024-01-17
 tag:
   - pwn
 ---
-
-
-
 # c2018-HitCon-gundam(tcahe机制+泄露libc地址)
 
 ## 重要知识点
