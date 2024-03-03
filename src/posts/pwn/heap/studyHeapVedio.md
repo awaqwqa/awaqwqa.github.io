@@ -1,7 +1,9 @@
 ---
-date:2024-2-17
+date: 2024-2-17
+tag:
+  - pwn
+  - heap
 ---
-
 # NTUSTISC - Pwn 2学习笔记
 
 > 查看glibc的源码网址:https://elixir.bootlin.com/glibc/glibc-2.23/source/malloc/malloc.c

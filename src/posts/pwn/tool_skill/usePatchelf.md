@@ -3,7 +3,6 @@ date: 2024-2-21
 tag:
   - pwn
 ---
-
 # 记一次patchelf的使用+浅理解ld和libc
 
 > 每次去使用xclibc的时候 都不是特别好使hhh 所以就重新了解一下patchelf的使用<br>参考文章:[linux动态链接库的加载顺序_动态链接库顺序-CSDN博客](https://blog.csdn.net/byxdaz/article/details/89405588)和[man ld.so 的翻译_ld-linux.so的man手册-CSDN博客](https://blog.csdn.net/Longyu_wlz/article/details/108511931)获取程序寻找libc的顺序<br>[[转\] Linux下程序的加载、运行和终止流程 - JollyWing - 博客园 (cnblogs.com)](https://www.cnblogs.com/jiqingwu/p/linux_binary_load_and_run.html)获取linux加载程序的流程

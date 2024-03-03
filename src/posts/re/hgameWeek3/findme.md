@@ -1,6 +1,6 @@
 ---
-- date: 2024-2-29
-- tag:
+date: 2024-2-29
+tag:
   - re
 ---
 # findme(HgameWeek3Re)

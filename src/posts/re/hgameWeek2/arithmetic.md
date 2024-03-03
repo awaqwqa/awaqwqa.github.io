@@ -1,6 +1,6 @@
 ---
-date:2024-2-26
-tag:
+date: 2024-2-26
+tag: 
   - re
 ---
 # hgameWeek2Arithmetic（2024）
