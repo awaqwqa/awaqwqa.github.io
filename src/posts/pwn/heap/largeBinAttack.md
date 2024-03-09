@@ -7,11 +7,25 @@ tag:
 
 # large Bin Attack学习（_int_malloc源码细读 ）
 
-> 参考文章:<br>wiki:[Large Bin Attack - CTF Wiki (ctf-wiki.org)](https://ctf-wiki.org/pwn/linux/user-mode/heap/ptmalloc2/large-bin-attack/)<br>源码级调试glibc:[源码级调试glibc_glibc cannot be compiled without optimization-CSDN博客](https://blog.csdn.net/astrotycoon/article/details/52662685)<br>源码分析:[glibc 2.31 malloc与free 源码分析（持续更新） - PwnKi - 博客园 (cnblogs.com)](https://www.cnblogs.com/luoleqi/p/15520621.html)+[glibc malloc源码分析 - PwnKi - 博客园 (cnblogs.com)](https://www.cnblogs.com/luoleqi/p/12731875.html#_int_malloc)
+> 参考文章:<br>wiki:[Large Bin Attack - CTF Wiki (ctf-wiki.org)](https://ctf-wiki.org/pwn/linux/user-mode/heap/ptmalloc2/large-bin-attack/)<br>源码级调试glibc:[源码级调试glibc_glibc cannot be compiled without optimization-CSDN博客](https://blog.csdn.net/astrotycoon/article/details/52662685)<br>源码分析:[glibc 2.31 malloc与free 源码分析（持续更新） - PwnKi - 博客园 (cnblogs.com)](https://www.cnblogs.com/luoleqi/p/15520621.html)+[glibc malloc源码分析 - PwnKi - 博客园 (cnblogs.com)](https://www.cnblogs.com/luoleqi/p/12731875.html#_int_malloc)<br>详细拆分了_int_malloc的流程 并且按照功能分了标题 想要了解对应部分就直接点击标题跳转即可<br>第一次阅读glibc的源码然后进行分析 有错误的地方请大佬指正
 
 ## 源码分析(largebin malloc)
 
 > 每次去看别人文章分析总结的 总感觉比较难记住 每个libc版本的区别 然后也没彻底理解一些操作 所以进行阅读源码<br>然后重点是检查机制部分 如果只想看重点就直接跳转到[largebin入链操作](#largebin)
+
+- 然后在正式阅读源码之前 我们先理清楚largebin的结构（去除了头部的fd_nextsize/bk_nextsize 为了图片干净一点）
+
+  ![largebin_struct](https://awaqwqa.github.io/img/large_bin_attack/largebin_attack.png)
+
+  - 我们可以简化一下 去除尾链的fd和头链的bk方便我们理清逻辑
+  
+    ![large_more](https://awaqwqa.github.io/img/large_bin_attack/largebin_struct.png)
+
+  - 大概就是这个样子 也就是bin头部通过fd/bk链接chunk size链表的头部和尾部 然后chunk size链表之间通过fd_nextsize/bk_nextsize链接
+  - chunksize链表中 同一个大小的chunk通过fd/bk进行链接
+  - 所以largebin的fd和bk和其他的双向链不同我们不能通过从bin一路通过fd返回到;arge bin的头部
+  
+  
 
 ### Unsortedbin的合并/入链/分配操作
 
@@ -247,7 +261,7 @@ bck->fd = victim;
     if (fwd != bck)
     ```
 
-  - **如果当前chunk比最后一位chunk还小则直接加入链表末尾**
+  - 如果当前chunk比最后一位chunk还小则直接加入链表末尾
 
     >   bck是头 bck->bk应该就是最后一位<br>然后要加入fwd和bck之间 我们应该先调整fwd和bck 所以bck改为链表最后一位 fwd改为链表头<br>bck<----->chunk<----->fwd
 
@@ -279,7 +293,7 @@ bck->fd = victim;
         fwd = fwd->fd;
     ```
 
-  - 否则就执行largebin的入chunk_size链操作:
+  - **当我们需求的chunk size大于large中所有的chunk size的情况** 执行largebin的入chunk_size链操作:<span id = "attack"></span>
 
     > 这里我理解的是largebin存在两条链 也就是chunk size的链 和fd bk构成的bins链 这里先是入的chunk size的链
     
@@ -405,10 +419,10 @@ if ((victim = first (bin)) != bin && (unsigned long) chunksize_nomask (victim)>=
 ##### 返回被切割后的chunk
 
 ```c
-  check_malloced_chunk (av, victim, nb);
-              void *p = chunk2mem (victim);
-              alloc_perturb (p, bytes);
-              return p;
+check_malloced_chunk (av, victim, nb);
+void *p = chunk2mem (victim);
+alloc_perturb (p, bytes);
+return p;
 ```
 
 #### 从topchunk中获取chunk
@@ -417,3 +431,33 @@ if ((victim = first (bin)) != bin && (unsigned long) chunksize_nomask (victim)>=
 
 ## 漏洞利用
 
+> 我们主要是利用:[largechunk中最大的chunk还是小于我们所需求的chunk大小](#attack)这种情况 我们来详细分析一下这个流程中究竟干了什么
+
+```c
+victim->fd_nextsize = fwd;
+victim->bk_nextsize = fwd->bk_nextsize;
+if (__glibc_unlikely (fwd->bk_nextsize->fd_nextsize != fwd))
+    malloc_printerr ("malloc(): largebin double linked list corrupted (nextsize)");
+fwd->bk_nextsize = victim;
+victim->bk_nextsize->fd_nextsize = victim;
+// 以及
+victim->bk = bck;
+victim->fd = fwd;
+fwd->bk = victim;
+bck->fd = victim;
+```
+
+- 我们可以发现 这里的代码 危险的地方在于 如果现在我们能够修改largebin中fwd位置的chunk 我们就能够泄露victim的地址 
+
+  > 我们主要利用这两行代码
+
+  ```
+  victim->bk_nextsize->fd_nextsize = victim;
+  bck->fd = victim;
+  ```
+
+- 如何实现？比如
+  - 我们修改largebin中的chunk 也就是fwd的bk为我们想要泄露到的`目标地址-0x10`时
+    - 所以fwd->bk->fd也就是`目标地址` 
+    - 阅读前后逻辑我们知道这段代码中bck=fwd->bk
+    - bcl->fd 最后被赋值victim
