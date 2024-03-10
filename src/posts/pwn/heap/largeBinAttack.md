@@ -11,7 +11,9 @@ tag:
 
 ## 源码分析(largebin malloc)
 
-> 每次去看别人文章分析总结的 总感觉比较难记住 每个libc版本的区别 然后也没彻底理解一些操作 所以进行阅读源码<br>然后重点是检查机制部分 如果只想看重点就直接跳转到[largebin入链操作](#largebin)
+> 每次去看别人文章分析总结的 总感觉比较难记住 每个libc版本的区别 然后也没彻底理解一些操作 所以进行阅读源码
+>
+> 然后重点是检查机制部分 如果只想看重点就直接跳转到[largebin入链操作](#largebin)
 
 - 然后在正式阅读源码之前 我们先理清楚largebin的结构（去除了头部的fd_nextsize/bk_nextsize 为了图片干净一点）
 
@@ -19,17 +21,17 @@ tag:
 
   - 我们可以简化一下 去除尾链的fd和头链的bk方便我们理清逻辑
   
-    ![large_more](https://awaqwqa.github.io/img/large_bin_attack/largebin_struct.png)
+    ![large_struct](https://awaqwqa.github.io/img/large_bin_attack/struct.png)
 
   - 大概就是这个样子 也就是bin头部通过fd/bk链接chunk size链表的头部和尾部 然后chunk size链表之间通过fd_nextsize/bk_nextsize链接
   - chunksize链表中 同一个大小的chunk通过fd/bk进行链接
-  - 所以largebin的fd和bk和其他的双向链不同我们不能通过从bin一路通过fd返回到;arge bin的头部
+  - 所以largebin的fd和bk和其他的双向链不同我们不能通过从bin一路通过fd返回到large bin的头部
   
   
 
 ### Unsortedbin的合并/入链/分配操作
 
-#### 遍历的开始（梦的开始）
+### 遍历的开始（梦的开始）
 
 > 后面的操作中最重要的就是Victim变量 这个变量是当前循环到的unsortedbin chunk<br>bck变量 也就是bck <-------> victim 这个关系
 
@@ -43,7 +45,7 @@ tag:
     }
     ```
 
-##### 调试
+### 调试
 
 ```shell
 unsortedbin
@@ -90,7 +92,7 @@ all: 0x555555559680 —▸ 0x7ffff7fb9be0 (main_arena+96) ◂— 0x555555559680
 
   - 我们会发现fd和bk都是指向了自己本身也就是main_arena+96这个位置
 
-#### 安全检查机制
+### 安全检查机制
 
 > 这里的安全机制全是对unsortedbin中的chunk进行的检查
 
@@ -123,7 +125,11 @@ all: 0x555555559680 —▸ 0x7ffff7fb9be0 (main_arena+96) ◂— 0x555555559680
 
 - 检查bck的fd是否为当前chunk 或者当前chunk的fd是否是bin的头结点
 
-  > bck = victim->bk;<br>victim = unsorted_chunks (av)->bk)<br>应该就是检查下一个chunk是否是合法的
+  > bck = victim->bk;
+  >
+  > victim = unsorted_chunks (av)->bk)
+  >
+  > 应该就是检查下一个chunk是否是合法的
 
   ```c
   if (__glibc_unlikely (bck->fd != victim)
@@ -140,7 +146,7 @@ all: 0x555555559680 —▸ 0x7ffff7fb9be0 (main_arena+96) ◂— 0x555555559680
    	malloc_printerr ("malloc(): invalid next->prev_inuse (unsorted)");
   ```
 
-#### 直接返回smallbin_chunk情况
+### 直接返回smallbin_chunk情况
 
 > 然后就是从unsortedbin割small chunk 如果符合条件
 >
@@ -177,7 +183,7 @@ if (in_smallbin_range (nb) &&
 }
 ```
 
-#### 从unsortedbin中移除
+### 从unsortedbin中移除
 
 > 在这里已经将chunk从unsortdbin中移除
 
@@ -186,7 +192,7 @@ if (in_smallbin_range (nb) &&
  bck->fd = unsorted_chunks (av);
 ```
 
-#### 大小刚好相等情况
+### 大小刚好相等情况
 
 - 如果chunk和当前需要的chunk大小一致 则直接返回chunk 并且设置物理意义上紧挨着的下一个chunk的size中p为0也就是free状态
 
@@ -213,13 +219,19 @@ if (in_smallbin_range (nb) &&
   return p;  /* 返回内存指针 */
   ```
 
-#### 归类入链操作<span id = "largebin"></span>
+### 归类入链操作<span id = "largebin"></span>
 
-> 这里主要是将unsortedbin合并后的 入small链表或者large链表的操作<br>这里的fwd和bck记好了 我们从unsortedbin抠出来的chunk就要合并进入fwd和bck的中间<br>这后面的操作往往是先让fwd到指定的位置 然后bck通过fwd->bk来进行的定位
+> 这里主要是将unsortedbin合并后的 入small链表或者large链表的操作
+>
+> 这里的fwd和bck记好了 我们从unsortedbin抠出来的chunk就要合并进入fwd和bck的中间
+>
+> 这后面的操作往往是先让fwd到指定的位置 然后bck通过fwd->bk来进行的定位
 
-##### small 和 large最终入bin操作
+### small 和 large最终入bin操作
 
-> 这里把最后的部分 直接提前 拿出来 因为smallbin和largebin的入链操作都含这个代码<br>largebin还有chunk size的入链操作 以及其他的复杂检查
+> 这里把最后的部分 直接提前 拿出来 因为smallbin和largebin的入链操作都含这个代码
+>
+> largebin还有chunk size的入链操作 以及其他的复杂检查
 
 ```c
 mark_bin (av, victim_index);
@@ -229,12 +241,14 @@ fwd->bk = victim;
 bck->fd = victim;
 ```
 
-##### smallbin的fwd bck赋值
+### smallbin的fwd bck赋值
 
 - 如果属于small bin则进行fwd和bck的赋值
 
-  > small bin 的链表表头赋值给 bck:bck = bin_at (av, victim_index);<br>首个chunk赋值给fwd :fwd = bck->fd;
-
+  > small bin 的链表表头赋值给 bck:bck = bin_at (av, victim_index);
+  >
+  > 首个chunk赋值给fwd :fwd = bck->fd;
+  
   ```c
   if (in_smallbin_range (size)){
       victim_index = smallbin_index (size);
@@ -243,7 +257,7 @@ bck->fd = victim;
   }
   ```
 
-##### largebin 入bin链和chunk size链
+### largebin 入bin链和chunk size链
 
 - 如果属于large_bins同理进行赋值 然后判断该插入什么合适的位置
 
@@ -263,8 +277,12 @@ bck->fd = victim;
 
   - 如果当前chunk比最后一位chunk还小则直接加入链表末尾
 
-    >   bck是头 bck->bk应该就是最后一位<br>然后要加入fwd和bck之间 我们应该先调整fwd和bck 所以bck改为链表最后一位 fwd改为链表头<br>bck<----->chunk<----->fwd
-
+    >   bck是头 bck->bk应该就是最后一位
+    >
+    >   然后要加入fwd和bck之间 我们应该先调整fwd和bck 所以bck改为链表最后一位 fwd改为链表头
+    >
+    >   bck<----->chunk<----->fwd
+  
     ```c
     if ((unsigned long) (size)< (unsigned long) chunksize_nomask (bck->bk)){
         fwd = bck;
@@ -274,9 +292,9 @@ bck->fd = victim;
         fwd->fd->bk_nextsize = victim->bk_nextsize->fd_nextsize = victim;
     }
     ```
-
+  
   - 否则进行遍历判断 匹配第一个小于等于 当前chunk的
-
+  
     ```c
     while ((unsigned long) size < chunksize_nomask (fwd)){
         fwd = fwd->fd_nextsize;
@@ -285,16 +303,16 @@ bck->fd = victim;
     ```
 
   - 如果该chunk与当前chunk相同则让chunk插入fwd之后 所以
-
+  
     > 因为large bin是按照大小进行的排序 所以我们为了不额外修改chunk size链表 直接将chunk链接到fwd后面 
-
+  
     ```c
     if ((unsigned long) size== (unsigned long) chunksize_nomask (fwd))
         fwd = fwd->fd;
     ```
-
+  
   - **当我们需求的chunk size大于large中所有的chunk size的情况** 执行largebin的入chunk_size链操作:<span id = "attack"></span>
-
+  
     > 这里我理解的是largebin存在两条链 也就是chunk size的链 和fd bk构成的bins链 这里先是入的chunk size的链
     
     ```c
@@ -305,7 +323,7 @@ bck->fd = victim;
     fwd->bk_nextsize = victim;
     victim->bk_nextsize->fd_nextsize = victim;
     ```
-
+  
     - 这里就是重点了 也就是large bin的入链操作
     
     - 首先这是初始状态
@@ -333,8 +351,7 @@ bck->fd = victim;
     bck->fd = victim;
     ```
 
-
-#### 从largebin中获取chunk
+### 从largebin中获取chunk
 
 - largebin情况
 
@@ -342,9 +359,11 @@ bck->fd = victim;
   if (!in_smallbin_range (nb))
   ```
 
-##### chunk脱链 remainder chunk入链
+### chunk脱链 remainder chunk入链
 
-> 首先是判断情况 我们只处理这一种情况:largebin中有chunk 然后largebin中最大的chunk大于我们的需求<br>接下来的代码都是从largebin中获取chunk
+> 首先是判断情况 我们只处理这一种情况:largebin中有chunk 然后largebin中最大的chunk大于我们的需求
+>
+> 接下来的代码都是从largebin中获取chunk
 
 ```c
 if ((victim = first (bin)) != bin && (unsigned long) chunksize_nomask (victim)>= (unsigned long) (nb))
@@ -416,7 +435,7 @@ if ((victim = first (bin)) != bin && (unsigned long) chunksize_nomask (victim)>=
   }
   ```
 
-##### 返回被切割后的chunk
+### 返回被切割后的chunk
 
 ```c
 check_malloced_chunk (av, victim, nb);
@@ -425,7 +444,7 @@ alloc_perturb (p, bytes);
 return p;
 ```
 
-#### 从topchunk中获取chunk
+### 从topchunk中获取chunk
 
 > 我是大概浏览的 大概意思是去剩下的chunk中寻找 如果没找到就去topchunk分配 如果topchunk不够就去系统申请
 
@@ -460,4 +479,9 @@ bck->fd = victim;
   - 我们修改largebin中的chunk 也就是fwd的bk为我们想要泄露到的`目标地址-0x10`时
     - 所以fwd->bk->fd也就是`目标地址` 
     - 阅读前后逻辑我们知道这段代码中bck=fwd->bk
-    - bcl->fd 最后被赋值victim
+    - bck->fd 最后被赋值victim
+    - 所以也就是fwd->bk->fd被赋值victim 也就是目标地址赋值victim
+  - 我们修改fwd的bk_nextsize为`目标地址-0x20`
+    - 所以fwd->bk_nextsize->fd_nextsize等于目标地址
+    - 然后也因为victim->bk_nextsize = fwd->bk_nextsize; 和victim->bk_nextsize->fd_nextsize = victim所以等价替换
+    -  fwd->bk_nextsize->fd_nextsize=victim也就是目标地址等于victim
