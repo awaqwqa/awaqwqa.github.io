@@ -40,7 +40,7 @@ if (in_smallbin_range (nb)){
 
 ## 漏洞利用图
 
-![image-20240319205119155](C:\Users\NewOm\AppData\Roaming\Typora\typora-user-images\image-20240319205119155.png)
+![image-20240319205119155](https://awaqwqa.github.io/img/house_of_lore/image-20240319205119155.png)
 
 - 这里我们可以直观看见bck victim bin的相对位置 这里我简化了部分链 
 
