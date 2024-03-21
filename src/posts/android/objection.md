@@ -8,13 +8,99 @@ tag:
 
 # objection 初次体验
 
-## 连接
+> 学习文章[[分享\]objection基本操作与实战-Android安全-看雪-安全社区|安全招聘|kanxue.com](https://bbs.kanxue.com/thread-277929.htm)
+>
+> [objection 使用详解 - ol4three](https://www.ol4three.com/2022/03/11/Android/objection-使用详解/)
 
-- 第一次我使用的教程上面说的:`objection -g <应用标识符> explore`但是报错:
+## 链接
+
+- 我们先通过指令查到我们的包名
 
   ```shell
-  Unable to connect to the frida server: need Gadget to attach on jailed Android; its default location is:.....
+  adb shell dumpsys window | grep CurrentFocus
   ```
 
-- 我猜测大概是因为我们frida修改了端口号 所以我们尝试`objection -g com.netease.x19 explore -P 11451`
+  > 这个指令可以查到当前的窗口的包和目前的class
+
+  ![pack_name](file:///C:\Users\NewOm\Documents\Tencent Files\614286773\nt_qq\nt_data\Pic\2024-03\Ori\89b2402e52d3442da09b9069710d964a.png)
+
+  
+
+- 执行指令`objection -g com.netease.x19 explore`
+
+## 初步探索
+
+- 使用指令
+
+  ```shell
+  android hooking list activities
+  ```
+
+  - 获取目前加载的class 列表 然后找到我们的com.mojang.minecraftpe 进行hook
+
+- hook
+
+  ```shell
+  android hooking watch class_method com.mojang.minecraftpe.MainActivity --dump-args --dump-backtrace --dump-return
+  ```
+
+  ![image-20240320105839523](C:\Users\NewOm\AppData\Roaming\Typora\typora-user-images\image-20240320105839523.png)
+
+  - 出现了报错
+
+  - 哈哈哈哈 我犯蠢了 应该是class 而不是class_method
+
+    ```
+    android hooking watch class com.mojang.minecraftpe.MainActivity --dump-args --dump-backtrace --dump-return
+    ```
+
+  ![img](file:///C:\Users\NewOm\Documents\Tencent Files\614286773\nt_qq\nt_data\Pic\2024-03\Ori\09a1a335a2fb01a3bed210644dc5c9e2.png)
+
+- 调用了的函数
+
+  ```shell
+  (agent) [301082] Called com.mojang.minecraftpe.MainActivity.isTextWidgetActive()
+  (agent) [301082] Called com.mojang.minecraftpe.MainActivity.tick()
+  (agent) [301082] Called com.mojang.minecraftpe.MainActivity.getCursorPosition()
+  
+  (agent) [301082] Called com.mojang.minecraftpe.MainActivity.nativeJsCall(java.lang.String, com.mojang.minecraftpe.RNCallPythonRetObj)
+  (agent) [301082] Called com.mojang.minecraftpe.MainActivity.getInstance()
+  (agent) [301082] Called com.mojang.minecraftpe.MainActivity.setRuntimeMsg(java.lang.String)
+  (agent) [301082] Called com.mojang.minecraftpe.MainActivity.nativeSendMessageToJs(java.lang.String)
+  (agent) [301082] Called com.mojang.minecraftpe.MainActivity.doesReactNativeExist()
+  
+  ```
+
+- 查看目前top顶部的activity
+
+  ```shell
+  adb shell dumpsys activity top
+  ```
+
+  
+
+## 分析
+
+### isTextWidgetActive
+
+```shell
+ android hooking watch class_method com.mojang.minecraftpe.MainActivity.isTextWidgetActive --dump-args --dump-backtrace --dump-return
+```
+
+![image-20240320113131596](C:\Users\NewOm\AppData\Roaming\Typora\typora-user-images\image-20240320113131596.png)
+
+- 这里看名字就大概知道isTextWidgetActive是检测
+- 然后这个东西被getCursorPosition调用的
+
+## getCursorPosition
+
+![image-20240320113426950](C:\Users\NewOm\AppData\Roaming\Typora\typora-user-images\image-20240320113426950.png)
+
+- 返回值-1
+
+### TICK
+
+![image-20240320114400575](C:\Users\NewOm\AppData\Roaming\Typora\typora-user-images\image-20240320114400575.png)
+
+
 
