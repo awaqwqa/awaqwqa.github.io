@@ -5,13 +5,13 @@ tag:
   - heap
 ---
 
-# vctf apples leak libc操作复现
+# vctf apples leak libc操作复现(高版本的overlapping)
 
 > 题目中存在off_by_one libc版本2.34以上我们没办法使用常规的overlapping 泄露libc地址
 >
 > 所以我们要精心构造一个chunk head来绕过新版本的检查机制 实现leak libc的操作
 >
-> 文章中我们先将原理 在最后会将Arahat0师傅的脚本给出来()
+> 文章中我们先讲原理 在最后会将Arahat0师傅的脚本给出来()
 
 ## 安全检查机制
 
