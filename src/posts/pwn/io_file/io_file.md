@@ -4,7 +4,6 @@ tag:
   - pwn
   - heap
 ---
-
 # 浅学习Io_file
 
 > io_file相关学习有点蛋疼 感觉较为复杂 找到了大佬的blog感觉摸到了皮毛 为了深入

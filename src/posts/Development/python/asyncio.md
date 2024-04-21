@@ -3,9 +3,7 @@ date: 2024-4-6
 tag:
   - python
 ---
-
 # python asyncio学习
-
 > 文章:[技术揭秘 | 理解 asyncio 来构建高性能 Python 网络程序 - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/168275509)
 >
 > [python中的asyncio使用详解_python asyncio-CSDN博客](https://blog.csdn.net/bluehawksky/article/details/106283636)
@@ -82,7 +80,7 @@ class EventLoop:
   print(g)
   ```
 
-  ![image-20240406165914445](C:\Users\NewOm\AppData\Roaming\Typora\typora-user-images\image-20240406165914445.png)
+  ![image-20240406165914445](https://awaqwqa.github.io/img/asyncio/image-20240406165914445.png)
 
 - 生成器对象.send(arg)后args会变成yield的返回值 出现在函数内部 并且当我调用send的时候 函数才会真正执行 send的返回值是yield右侧的值
 
@@ -99,7 +97,7 @@ class EventLoop:
   print(g.send(3))
   ```
 
-  ![image-20240406170144040](C:\Users\NewOm\AppData\Roaming\Typora\typora-user-images\image-20240406170144040.png)
+  ![image-20240406170144040](https://awaqwqa.github.io/img/asyncio/image-20240406170144040.png)
 
 ## 基本使用
 
