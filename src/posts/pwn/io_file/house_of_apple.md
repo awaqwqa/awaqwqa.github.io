@@ -1,7 +1,5 @@
 # house of apple 原理细学习
 
-> 其实还有很多house还没学 看见house of apple文章中提及了很多其他的house 顺便一起学了
-
 ## 参考文章:
 
 - [[原创\] House of apple 一种新的glibc中IO攻击方法 (1)-Pwn-看雪-安全社区|安全招聘|kanxue.com](https://bbs.kanxue.com/thread-273418.htm)
