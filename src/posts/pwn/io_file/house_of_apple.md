@@ -25,6 +25,16 @@
 
 ![image-20240423173604690](https://awaqwqa.github.io/img/house_of_apple/image-20240423173604690.png)
 
+### 触发exit
+
+- fcloseall
+
+![image-20240423194735581](C:\Users\NewOm\AppData\Roaming\Typora\typora-user-images\image-20240423194735581.png)
+
+- _IO_cleanup
+
+  ![image-20240423194855564](C:\Users\NewOm\AppData\Roaming\Typora\typora-user-images\image-20240423194855564.png)
+
 ### 调用_IO_wstrn_overflow
 
 - `_IO_wstrn_jumps`:
