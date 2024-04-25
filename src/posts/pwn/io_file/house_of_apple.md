@@ -11,7 +11,7 @@
 - 泄露heap地址 libc地址
 - 可进行largebin attack
 
-## 原理
+## house_of_apple1原理
 
 > 这里阅读了大致逻辑后进行总结
 
@@ -126,5 +126,111 @@ typedef struct
 } _IO_wstrnfile;
 ```
 
+## house_of_apple 2原理
 
+> 学习文章:[[原创\] House of apple 一种新的glibc中IO攻击方法 (2)-Pwn-看雪-安全社区|安全招聘|kanxue.com](https://bbs.kanxue.com/thread-273832.htm)
+
+### _IO_OVERFLOW调用
+
+```python
+#define _IO_OVERFLOW(FP, CH) JUMP1 (__overflow, FP, CH)
+#define JUMP1(FUNC, THIS, X1) (_IO_JUMPS_FUNC(THIS)->FUNC) (THIS, X1)
+#define _IO_JUMPS_FUNC(THIS) (IO_validate_vtable (_IO_JUMPS_FILE_plus (THIS)))
+```
+
+- 我们可以发现这个调用最终会调用`IO_validate_vtable ` 然后会触发检查vatble是否合法 所以我们得想办法绕过
+
+###  _IO_wfile_overflow的调用
+
+> 这个函数存在于 `_IO_wfile_jumps` ,`_IO_wfile_jumps_mmap`和`_IO_wfile_jumps_maybe_mmap`等虚表中
+
+```c
+const struct _IO_jump_t _IO_wfile_jumps libio_vtable =
+{
+  JUMP_INIT_DUMMY,
+  JUMP_INIT(finish, _IO_new_file_finish),
+    // koko da you
+  JUMP_INIT(overflow, (_IO_overflow_t) _IO_wfile_overflow),
+  JUMP_INIT(underflow, (_IO_underflow_t) _IO_wfile_underflow),
+  JUMP_INIT(uflow, (_IO_underflow_t) _IO_wdefault_uflow),
+  JUMP_INIT(pbackfail, (_IO_pbackfail_t) _IO_wdefault_pbackfail),
+  JUMP_INIT(xsputn, _IO_wfile_xsputn),
+  JUMP_INIT(xsgetn, _IO_file_xsgetn),
+  JUMP_INIT(seekoff, _IO_wfile_seekoff),
+  JUMP_INIT(seekpos, _IO_default_seekpos),
+  JUMP_INIT(setbuf, _IO_new_file_setbuf),
+  JUMP_INIT(sync, (_IO_sync_t) _IO_wfile_sync),
+  JUMP_INIT(doallocate, _IO_wfile_doallocate),
+  JUMP_INIT(read, _IO_file_read),
+  JUMP_INIT(write, _IO_new_file_write),
+  JUMP_INIT(seek, _IO_file_seek),
+  JUMP_INIT(close, _IO_file_close),
+  JUMP_INIT(stat, _IO_file_stat),
+  JUMP_INIT(showmanyc, _IO_default_showmanyc),
+  JUMP_INIT(imbue, _IO_default_imbue)
+};
+const struct _IO_jump_t _IO_wfile_jumps_mmap libio_vtable =
+{
+  JUMP_INIT_DUMMY,
+  JUMP_INIT(finish, _IO_new_file_finish),
+    //  koko da you
+  JUMP_INIT(overflow, (_IO_overflow_t) _IO_wfile_overflow),
+  JUMP_INIT(underflow, (_IO_underflow_t) _IO_wfile_underflow_mmap),
+  JUMP_INIT(uflow, (_IO_underflow_t) _IO_wdefault_uflow),
+  JUMP_INIT(pbackfail, (_IO_pbackfail_t) _IO_wdefault_pbackfail),
+  JUMP_INIT(xsputn, _IO_wfile_xsputn),
+  JUMP_INIT(xsgetn, _IO_file_xsgetn),
+  JUMP_INIT(seekoff, _IO_wfile_seekoff),
+  JUMP_INIT(seekpos, _IO_default_seekpos),
+  JUMP_INIT(setbuf, _IO_file_setbuf_mmap),
+  JUMP_INIT(sync, (_IO_sync_t) _IO_wfile_sync),
+  JUMP_INIT(doallocate, _IO_wfile_doallocate),
+  JUMP_INIT(read, _IO_file_read),
+  JUMP_INIT(write, _IO_new_file_write),
+  JUMP_INIT(seek, _IO_file_seek),
+  JUMP_INIT(close, _IO_file_close_mmap),
+  JUMP_INIT(stat, _IO_file_stat),
+  JUMP_INIT(showmanyc, _IO_default_showmanyc),
+  JUMP_INIT(imbue, _IO_default_imbue)
+};
+const struct _IO_jump_t _IO_wfile_jumps_maybe_mmap libio_vtable =
+{
+  JUMP_INIT_DUMMY,
+  JUMP_INIT(finish, _IO_new_file_finish),
+    //  koko da you
+  JUMP_INIT(overflow, (_IO_overflow_t) _IO_wfile_overflow),
+  JUMP_INIT(underflow, (_IO_underflow_t) _IO_wfile_underflow_maybe_mmap),
+  JUMP_INIT(uflow, (_IO_underflow_t) _IO_wdefault_uflow),
+  JUMP_INIT(pbackfail, (_IO_pbackfail_t) _IO_wdefault_pbackfail),
+  JUMP_INIT(xsputn, _IO_wfile_xsputn),
+  JUMP_INIT(xsgetn, _IO_file_xsgetn),
+  JUMP_INIT(seekoff, _IO_wfile_seekoff),
+  JUMP_INIT(seekpos, _IO_default_seekpos),
+  JUMP_INIT(setbuf, _IO_file_setbuf_mmap),
+  JUMP_INIT(sync, (_IO_sync_t) _IO_wfile_sync),
+  JUMP_INIT(doallocate, _IO_wfile_doallocate),
+  JUMP_INIT(read, _IO_file_read),
+  JUMP_INIT(write, _IO_new_file_write),
+  JUMP_INIT(seek, _IO_file_seek),
+  JUMP_INIT(close, _IO_file_close),
+  JUMP_INIT(stat, _IO_file_stat),
+  JUMP_INIT(showmanyc, _IO_default_showmanyc),
+  JUMP_INIT(imbue, _IO_default_imbue)
+};
+
+```
+
+- 我们看看这个函数的调用链
+
+  ```c
+  #define _IO_WOVERFLOW(FP, CH) WJUMP1 (__overflow, FP, CH)
+  #define WJUMP1(FUNC, THIS, X1) (_IO_WIDE_JUMPS_FUNC(THIS)->FUNC) (THIS, X1)
+  #define _IO_WIDE_JUMPS_FUNC(THIS) _IO_WIDE_JUMPS(THIS)
+  #define _IO_WIDE_JUMPS(THIS) \
+    _IO_CAST_FIELD_ACCESS ((THIS), struct _IO_FILE, _wide_data)->_wide_vtable
+  ```
+
+  - 我们可以发现这里就没有vatble的检查了 
+
+- 所以我们可以将 `vtable`改为`_IO_wfile_jumps`
 
