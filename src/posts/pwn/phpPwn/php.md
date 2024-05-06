@@ -117,13 +117,13 @@ static zend_always_inline void zend_mm_free_small(zend_mm_heap *heap, void *ptr,
 
 ## 调试
 
-![image-20240428113615977](C:\Users\NewOm\AppData\Roaming\Typora\typora-user-images\image-20240428113615977.png)
+![image-20240428113615977](https://awaqwqa.github.io/img/php/image-20240428113615977.png)
 
 - 每次emalloc下来的small chunk都是fd链中一条
 
   - 间距0x280
 
-  ![image-20240428113701938](C:\Users\NewOm\AppData\Roaming\Typora\typora-user-images\image-20240428113701938.png)
+  ![image-20240428113701938](https://awaqwqa.github.io/img/php/image-20240428113701938.png)
 
 - 依次向右取值
 
