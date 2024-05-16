@@ -1,3 +1,11 @@
+---
+date:2024-5-15
+tag:
+  - pwn
+  - io
+  - house of apple
+---
+
 # vctf apple 复现(apple的通用模板)
 
 > 本文参考的是[Arahat0](https://passport.kanxue.com/user-center-964693.htm) 师傅的脚本 这里主要介绍一下vctf apple的house of apple部分的思路 与常规的house of apple不同这里将`_wide_data`指向劫持的`FILE`结构体加减偏移 来让脚本更加可以移植 最后实现栈迁移打ROP链的操作
