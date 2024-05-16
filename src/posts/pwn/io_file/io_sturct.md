@@ -331,8 +331,7 @@ void  _IO_wdoallocbuf(FILE *fp)
 
 ![image-20240515215803234](https://awaqwqa.github.io/img/io_sturct/image-20240515215803234.png)
 
-- 所以最终就成功调用leave rern指令 并且rdi为
-  - `leave`等效为:mov rsp rbp;pop rbp; 
+- 所以最终就成功调用leave retn指令 
 
 ### 栈迁移
 
