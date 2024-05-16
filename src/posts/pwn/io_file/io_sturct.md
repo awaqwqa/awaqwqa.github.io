@@ -1,6 +1,6 @@
 # vctf apple 复现(apple的通用模板)
 
-> 本文参考的是[Arahat0](https://passport.kanxue.com/user-center-964693.htm) 的脚本 这里主要介绍一下vctf apple的house of apple部分的思路 与常规的house of apple不同这里将`_wide_data`指向劫持的`FILE`结构体加减偏移 来让脚本更加可以移植 最后实现栈迁移打ROP链的操作
+> 本文参考的是[Arahat0](https://passport.kanxue.com/user-center-964693.htm) 师傅的脚本 这里主要介绍一下vctf apple的house of apple部分的思路 与常规的house of apple不同这里将`_wide_data`指向劫持的`FILE`结构体加减偏移 来让脚本更加可以移植 最后实现栈迁移打ROP链的操作
 
 前情提要:要结合上一篇文章:[[原创\]vctf apples leak libc操作复现(高版本libc overlapping)-Pwn-看雪-安全社区|安全招聘|kanxue.com](https://bbs.kanxue.com/thread-281083.htm)来观看 在上一篇文章中我们通过较为复杂的overlapping实现了heap和libc的泄露 接下来我们通过劫持fd来实现一次任意写
 
