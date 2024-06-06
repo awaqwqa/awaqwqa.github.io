@@ -1,3 +1,9 @@
+---
+date: 2024-6-6
+tag:
+  - pwn
+---
+
 # 面试准备(热更)
 
 > [初入职场必备丨二进制面试问题汇总 - FreeBuf网络安全行业门户](https://www.freebuf.com/vuls/346048.html)pwn方向的分析 预计中旬左右
