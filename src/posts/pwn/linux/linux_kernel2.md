@@ -38,6 +38,8 @@ tag:
 > Dirty pipe :https://blog.csdn.net/void_zk/article/details/125884637
 >
 > Pipe_write源码分析:https://xz.aliyun.com/t/11016?time__1311=Cq0x2QD%3DqDT4l2zYGQqpxQq0I1tqWumD
+>
+> linux寻址机制:https://www.cnblogs.com/binlovetech/p/17571929.html
 
 ## 前置知识
 
@@ -196,6 +198,8 @@ ext4_file_read_iter()
 
 > 参考文章:https://blog.csdn.net/qq_41687938/article/details/119901916
 >
+> 详细解释https://segmentfault.com/a/1190000044229036
+>
 > linux内核使用vm_area_struct结构来表示一个独立的虚拟内存区域 因此一个进程使用多个vm_area_struct结构来分别表示不同类型的虚拟内存区域 比如一个vm_area_struct结构体就代表了text段一样 vm_area_struct主要是包含了一个区域的**起始** 和**结束** 并且包含**vm_ops**指针可以引用所有针对这个区域可以使用的系统调用函数
 
 ```c
@@ -265,7 +269,14 @@ int madvise(void *addr, size_t length, int advice);
   - MADV_DOFORK：撤销 MADV_DONTFORK 设置，使 fork() 复制该内存区域。
   - MADV_MERGEABLE：将内存区域标记为可合并，内核将尝试将具有相同内容的内存页面合并。
   - MADV_UNMERGEABLE：撤销 MADV_MERGEABLE 设置。
-    
+
+### PTE内核如何通过pte管理内存的映射关系
+
+> 参考文章:https://www.cnblogs.com/binlovetech/p/17571929.html
+
+内核会从物理内存空间中拿出一个物理内存页来专门存储进程里的这些内存映射关系,内核会在页表中划分出来一个个大小相等的小内存块，这些小内存块我们称之为页表项 PTE（Page Table Entry）
+
+我们一般将管理pte的页表叫做页目录也就是**pde**,我们通过取出虚拟地址的不同段,然后层层找到我们的pte从而找到我们的内存页面
 
 ## DirtyCOW漏洞成因
 
@@ -489,7 +500,52 @@ int main(int argc,char *argv[])
 }
 ```
 
+### mmap私有映射文件
 
+> 学习文章:https://segmentfault.com/a/1190000044229036
+>
+> 其实是在分析dirty cow的时候对内存文件页面的映射不是特别清楚,所以单独研究一下mmap私有映射文件
+
+堆和栈之间,其实就是mmap进行从操作的区域,mmap出来一般就是vm_area_struct(**VMA**)结构来表示
+
+进程虚拟内存空间中的**VMA**有两种组织形式(同时存在):
+
+```c
+// 进程虚拟内存空间描述符
+struct mm_struct {
+    // 串联组织进程空间中所有的 VMA  的双向链表 
+    struct vm_area_struct *mmap;  /* list of VMAs */
+    // 管理进程空间中所有 VMA 的红黑树
+    struct rb_root mm_rb;
+  	....
+}
+// 虚拟内存区域描述符
+struct vm_area_struct {
+    // vma 在 mm_struct->mmap 双向链表中的前驱节点和后继节点
+    struct vm_area_struct *vm_next, *vm_prev;
+    // vma 在 mm_struct->mm_rb 红黑树中的节点
+    struct rb_node vm_rb;
+  	...
+}
+```
+
+- **双向链表**
+- **红黑树**
+
+根据 mmap 创建出的这片虚拟内存区域背后所映射的**物理内存**能否在多进程之间共享,细分两种映射方式
+
+- `MAP_SHARED `表示共享映射，通过 mmap 映射出的这片内存区域在多进程之间是共享的，一个进程修改了共享映射的内存区域，其他进程是可以看到的，用于多进程之间的通信。
+- `MAP_PRIVATE `表示私有映射，通过 mmap 映射出的这片内存区域是进程私有的，其他进程是看不到的。如果是私有文件映射，那么多进程针对同一映射文件的修改将不会回写到磁盘文件上
+
+  这个就很符合开发思路,比如同一份二进制程序执行多个进程,代码段对于多进程来说是只读的所以就共享一块内存,然后data段等每个进程都是独立的,写的时候在单独进行修改.并且不会写回原本的二进制程序.所以在这个flags被用于**load_aout_binary**也就是加载可执行程序
+
+那么我们可以通过mmap私有映射文件,携带flags:`MAP_PRIVATE`
+
+- 先打开文件,创建vm_area_struct存储file指针 然后创建file结构体来描述打开的文件
+- 用`fd_array`找一个空闲位置分配,下标就是文件描述符
+- 读取内容的时候,内核会将文件变成多个缓冲页面存放在内存中(**page cache**) inode结构会存储指向**page_cache**的指针,也就是struct address_space **i_mapping**, 每个**page_cache**会存储文件所有的缓存页面
+- 当第一次读取的时候会触发缺页异常,创建文件内存页面对应的pte,与page cache关联起来
+- 当要写入的时候,因为是私有映射所以pte应该是只读的,会产生一个写保护类型的缺页中断,然后会重新申请一个内存页面,将page cache里面拷贝过去然后改成可写
 
 ## DirtyPipe漏洞成因
 

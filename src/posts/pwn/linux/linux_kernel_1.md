@@ -4,6 +4,10 @@
 
 > 本blog大量内容都是对参考文章的摘录汇总，方便本人查看（ 所以更推荐直接看参考文章
 >
+> 以及这道题有较多的知识点所以整个文章会有点冗余
+>
+> 可能往后linux内核学习的文章都是这样的形式,通过一个cve或者一个题来学习大量知识点,这样会导致文章都很冗余(充斥大量copy内容),所以我给这个系列叫做《不好看的linux内核安全学习》
+>
 > 内核题在比赛时一般是上传 C 语言程序的 base64 编码到服务器，然后运行
 >
 > 参考文章:[浅谈linux中的根文件系统（rootfs的原理和介绍）-CSDN博客](https://blog.csdn.net/LEON1741/article/details/78159754)
@@ -34,7 +38,15 @@
 >
 > linux内核源码:[Index of /sites/ftp.kernel.org/pub/linux/kernel/ (sjtu.edu.cn)](http://ftp.sjtu.edu.cn/sites/ftp.kernel.org/pub/linux/kernel/)
 >
-> 
+> userfaultfd学习:https://brieflyx.me/2020/linux-tools/userfaultfd-internals/
+>
+> https://blog.jcix.top/2018-10-01/userfaultfd_intro/
+>
+> https://blog.csdn.net/seaaseesa/article/details/104650794
+>
+> sk_buff结构体:https://blog.csdn.net/wangquan1992/article/details/112572572
+>
+> d3kheap复现:https://ywhkkx.github.io/2022/06/30/msg_msg-sk_buff%E7%9A%84%E7%BB%84%E5%90%88%E5%88%A9%E7%94%A8+pipe_buffer%20attack/
 
 ### 文件类型
 
@@ -318,14 +330,73 @@ kmem_cache_alloc_trace(struct kmem_cache *cachep, gfp_t flags, size_t size)
   void *kmem_cache_alloc(struct kmem_cache *cachep, gfp_t flags)
   ```
 
-  - cachep是给定的缓存的结构指针
+  - cachep是给定的缓存的结构指针 也就是kmalloc_caches
   - flags是分配的标志
+
+## userfaultfd学习
+
+> 参考文章:https://blog.jcix.top/2018-10-01/userfaultfd_intro/
+>
+> https://blog.csdn.net/seaaseesa/article/details/104650794
+
+内核为了提升开发的灵活性,将一些内核处理的任务拿给了用户态来完成.其中就有匿名页的缺页处理
+
+### 使用
+
+- 创建一个描述符**uffd**
+
+  ```c
+  uffd = syscall(__NR_userfaultfd, O_CLOEXEC | O_NONBLOCK);
+  ```
+
+- 随后可以通过**ioctl**+**uffd**与模块进行通信
+
+  - `UFFDIO_REGISTER` 注册监视区域 需要搭配结构体进行传递必要参数
+
+    ```c
+    // 注册时要用一个struct uffdio_register结构传递注册信息:
+    // struct uffdio_range {
+    // __u64 start;    /* Start of range */
+    // __u64 len;      /* Length of range (bytes) */
+    // };
+    //
+    // struct uffdio_register {
+    // struct uffdio_range range;
+    // __u64 mode;     /* Desired mode of operation (input) */
+    // __u64 ioctls;   /* Available ioctl() operations (output) */
+    // };
+    
+    addr = mmap(NULL, page_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0)
+    // addr 和 len 分别是我匿名映射返回的地址和长度，赋值到uffdio_register
+    uffdio_register.range.start = (unsigned long) addr;
+    uffdio_register.range.len = len;
+    // mode 只支持 UFFDIO_REGISTER_MODE_MISSING
+    uffdio_register.mode = UFFDIO_REGISTER_MODE_MISSING;
+    // 用ioctl的UFFDIO_REGISTER注册
+    ioctl(uffd, UFFDIO_REGISTER, &uffdio_register);
+    ```
+
+### pwn中利用
+
+因为这样的处理机制很方便我们进行条件竞争(大大提升)
+
+比如当我们内核在执行`copy_from_user(ptr,user_buf,len);`的时候,如果我们的**user_buf**是mmap映射的并且未初始化的,那么在执行的时候会发生缺页错误从而暂停.我们另外个线程将ptr释放掉,再将其他结构申请为ptr对应的内存.从而就可以实现对对应结构体的修改.
+
+![code](/Users/elegy/Pictures/代码截图/code.png)
+
+- 通过**registerUserfault**函数我们可以注册指定的内存页面
+- (TODO)
 
 ## UAF-堆喷(msg)
 
 > 参考文章:[从ciscn 2022半决赛赛题：浅析msg_msg结构体 - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/625446910)
 
-这里为了UAF一个可以合适大小的chunk，这里我们利用linux的消息队列进行操作
+消息队列是linux用来模块之间进行交流的流程大概是:
+
+- msgget函数创建了一个消息队列
+  - 返回消息队列的`msgid`作为进程的唯一标识符；失败则返回`-1`
+- msgsnd函数向消息队列中发送消息
+- msgrcv函数读取消息
 
 `/include/linux/msg.h`源码位置
 
@@ -347,7 +418,7 @@ struct msg_msgseg {
 };
 ```
 
-- List_head是双向链表
+- m_list是双向链表
 - next就是个单链表
 
 ### 开发角度浅了解消息队列机制
@@ -543,7 +614,7 @@ out_err:
 > 原文:`msgrcv`系统调用能从消息队列上接受指定大小的消息，并且选择性（是否）释放`msg_msg`结构体。具体实现源码在`/ipc/msg.c`的`do_msgrcv`中。
 
 ```c
-ssize_t msgrcv(int msqid, void *msgp, size_t msgsz, long msgtyp,int msgflg)
+size_t msgrcv(int msqid, void *msgp, size_t msgsz, long msgtyp,int msgflg)
 ```
 
 - 原文中对msgrcv的概括性解释
@@ -555,6 +626,45 @@ ssize_t msgrcv(int msqid, void *msgp, size_t msgsz, long msgtyp,int msgflg)
 - 通过find_msg函数进行定位
 
 ![QQ_1726817712243](/Users/elegy/Library/Containers/com.tencent.qq/Data/tmp/QQ_1726817712243.png)
+
+- 通过convert_mode函数获取mode
+
+  ```c
+  static inline int convert_mode(long *msgtyp, int msgflg)
+  {
+  	if (msgflg & MSG_COPY)
+  		return SEARCH_NUMBER;
+  	/*
+  	 *  find message of correct type.
+  	 *  msgtyp = 0 => get first.
+  	 *  msgtyp > 0 => get first message of matching type.
+  	 *  msgtyp < 0 => get message with least type must be < abs(msgtype).
+  	 */
+  	if (*msgtyp == 0)
+  		return SEARCH_ANY;
+  	if (*msgtyp < 0) {
+  		if (*msgtyp == LONG_MIN) /* -LONG_MIN is undefined */
+  			*msgtyp = LONG_MAX;
+  		else
+  			*msgtyp = -*msgtyp;
+  		return SEARCH_LESSEQUAL;
+  	}
+  	if (msgflg & MSG_EXCEPT)
+  		return SEARCH_NOTEQUAL;
+  	return SEARCH_EQUAL;
+  }
+  ```
+
+  - 其实也就是msgflg如果有`MSG_COPY`标志位有值则mode等于`SEARCH_NUMBER`
+    - 这里其实就是找到第**msgtyp**条消息
+  - 如果msgflg有`MSG_EXCEPT`标志位有值则mode等于`SEARCH_NOTEQUAL`
+    - 那么是找到第一个不等于msgtyp的消息
+  - `msgtyp`小于0 mode等于`SEARCH_LESSEQUAL`(less equal) 
+    - 这里其实msgtyp<0的时候去匹配m_type小于msgtyp的最小消息
+  - `msgtyp`等于0 则返回`SEARCH_ANY`(any) 
+    - 这里其实匹配任意消息也就是第一个消息
+  - 如果都不是则返回`SEARCH_EQUAL` 
+    - 这里其实是找到第一个msgtyp等于m_type的消息
 
 - **find_msg**
 
@@ -613,77 +723,69 @@ static struct msg_msg *find_msg(struct msg_queue *msq, long *msgtyp, int mode)
   }
   ```
 
-- 释放消息(**list_del**,**free_msg**)
+#### 释放消息(**list_del**,**free_msg**)
 
-  - 也就是list_del先脱链`msg_queue`函数
-  - **free_msg**释放`msg_msg`单向链表上的所有信息
+- 也就是list_del先脱链`msg_queue`函数 (unlink)
+- **free_msg**释放`msg_msg`单向链表上的所有信息
 
-  ```c
-  long ksys_msgrcv(int msqid, struct msgbuf __user *msgp, size_t msgsz,
-  		 long msgtyp, int msgflg)
-  {
-  	return do_msgrcv(msqid, msgp, msgsz, msgtyp, msgflg, do_msg_fill);
-  }
-  static long do_msgrcv(int msqid, void __user *buf, size_t bufsz, long msgtyp, int msgflg,
-  long (*msg_handler)(void __user *, struct msg_msg *, size_t))
-  {
-      int mode;
-      struct msg_queue *msq;
-      struct ipc_namespace *ns;
-      struct msg_msg *msg, *copy = NULL;
-      ...........
-      ...........
-      list_del(&msg->m_list);
-      ...........
-      ...........
-  
-      bufsz = msg_handler(buf, msg, bufsz);
-      free_msg(msg);
-  
-      return bufsz;
-  }
-  ```
+```c
+long ksys_msgrcv(int msqid, struct msgbuf __user *msgp, size_t msgsz,
+		 long msgtyp, int msgflg)
+{
+	return do_msgrcv(msqid, msgp, msgsz, msgtyp, msgflg, do_msg_fill);
+}
+static long do_msgrcv(int msqid, void __user *buf, size_t bufsz, long msgtyp, int msgflg,
+long (*msg_handler)(void __user *, struct msg_msg *, size_t))
+{
+    int mode;
+    struct msg_queue *msq;
+    struct ipc_namespace *ns;
+    struct msg_msg *msg, *copy = NULL;
+    ...........
+    ...........
+    list_del(&msg->m_list);
+    ...........
+    ...........
+
+    bufsz = msg_handler(buf, msg, bufsz);
+    free_msg(msg);
+
+    return bufsz;
+}
+```
+
+#### 返回消息
+
+返回消息就是msg_handler进行返回给用户态消息
 
 - KernelToUser消息拷贝
 
   - 这里msg_handler看`ksys_msgrev`可以发现其实是`do_msg_fill`函数 进行拷贝
 
-### 漏洞点学习
+    (keys_msgrc/do_msgrcv/do_msg_fill/)
 
-> 主要是`msgrcv`的时候调用`do_msg_fill`导致的漏洞
+    ```c
+    #define put_user(x, ptr) \
+      __put_user_check((__typeof__(*(ptr)))(x), (ptr), sizeof(*(ptr)))
+    static long do_msg_fill(void __user *dest, struct msg_msg *msg, size_t bufsz)
+    {
+    	struct msgbuf __user *msgp = dest;
+    	size_t msgsz;
+    
+    	if (put_user(msg->m_type, &msgp->mtype))
+    		return -EFAULT;
+    
+    	msgsz = (bufsz > msg->m_ts) ? msg->m_ts : bufsz;
+    	if (store_msg(msgp->mtext, msg, msgsz))
+    		return -EFAULT;
+    	return msgsz;
+    }
+    
+    ```
 
-- **do_msg_fill**源码(keys_msgrc/do_msgrcv/do_msg_fill/)
+  - 然后就是用store_msg进行数据拷贝
 
-  ```c
-  #define put_user(x, ptr) \
-    __put_user_check((__typeof__(*(ptr)))(x), (ptr), sizeof(*(ptr)))
-  static long do_msg_fill(void __user *dest, struct msg_msg *msg, size_t bufsz)
-  {
-  	struct msgbuf __user *msgp = dest;
-  	size_t msgsz;
-  
-  	if (put_user(msg->m_type, &msgp->mtype))
-  		return -EFAULT;
-  
-  	msgsz = (bufsz > msg->m_ts) ? msg->m_ts : bufsz;
-  	if (store_msg(msgp->mtext, msg, msgsz))
-  		return -EFAULT;
-  	return msgsz;
-  }
-  
-  ```
-
-  - store_msg函数(keys_msgrc/do_msgrcv/do_msg_fill/store_msg)
-
-    > 这里其实和`msg_msg`申请的时候很像
-    >
-    > 这里复制的长度是根据len来定的 而我们的len是msgsz也就是**do_msg_fill**函数
-    >
-    > ```c
-    > msgsz = (bufsz > msg->m_ts) ? msg->m_ts : bufsz;
-    > ```
-    >
-    > 来定的也就是`msgsz`是`bufsz`或者`msg->m_ts`两个中小的那个 bufsz也就是我们在msgrcv函数接受的第三个参数 我们想要的msg的大小
+    (keys_msgrc/do_msgrcv/do_msg_fill/store_msg)
 
     ```c
     int store_msg(void __user *dest, struct msg_msg *msg, size_t len)
@@ -705,4 +807,153 @@ static struct msg_msg *find_msg(struct msg_queue *msq, long *msgtyp, int mode)
     	return 0;
     }
     ```
+
+  - 我们可以看见这里其实和原本放入消息的时候基本一致,进行大量copy将整个msg_msg的消息发送给用户
+
+  - 这里复制的长度是根据len来定的 而我们的len是msgsz也就是**do_msg_fill**函数
+
+    ```
+    msgsz = (bufsz > msg->m_ts) ? msg->m_ts : bufsz;
+    ```
+
+    - 也就是我们给msgrcv传入的第三个参数(bufsz)的大小 但是最大为消息本身的大小
+
+#### msg_copy特殊位
+
+```c
+
+static long do_msgrcv(int msqid, void __user *buf, size_t bufsz, long msgtyp, int msgflg,
+	       long (*msg_handler)(void __user *, struct msg_msg *, size_t))
+{
+	int mode;
+	struct msg_queue *msq;
+	struct ipc_namespace *ns;
+	struct msg_msg *msg, *copy = NULL;
+	DEFINE_WAKE_Q(wake_q);
+	ns = current->nsproxy->ipc_ns;
+	...
+  if (msgflg & MSG_COPY) {
+		....
+      // 准备copy文件
+		copy = prepare_copy(buf, min_t(size_t, bufsz, ns->msg_ctlmax));
+		....
+	}
+  ...
+	for (;;) {
+		...
+		msg = find_msg(msq, &msgtyp, mode);
+		if (!IS_ERR(msg)) {
+			...
+			/*
+			 * If we are copying, then do not unlink message and do
+			 * not update queue parameters.
+			 */
+			if (msgflg & MSG_COPY) {
+				msg = copy_msg(msg, copy);
+				goto out_unlock0;
+			}
+		....
+		}
+		....
+  }
+out_unlock0:
+	ipc_unlock_object(&msq->q_perm);
+	wake_up_q(&wake_q);
+out_unlock1:
+	rcu_read_unlock();
+	if (IS_ERR(msg)) {
+    // 走入这里
+		free_copy(copy);
+		return PTR_ERR(msg);
+	}
+	...
+}
+```
+
+- 我们会发现当我们携带`MSG_COPY`信息的时候,
+  - find_msg首先会找到合适的msg
+  - 然后直接进行拷贝操作不会进行del_list正对应了我们前面的`SEARCH_NUMBER`对应操作,也就是将对应的消息拷贝出来然后发送给我们随后将拷贝出来的消息给释放掉从而让我们拥有了多次读取一条消息的能力
+
+### 任意读
+
+上文我们在msgrcv的时候携带`MSG_COPY`的时候,会调用`copy_msg`来进行拷贝消息
+
+```c
+struct msg_msg *copy_msg(struct msg_msg *src, struct msg_msg *dst)
+{
+	struct msg_msgseg *dst_pseg, *src_pseg;
+	size_t len = src->m_ts;
+	size_t alen;
+
+	if (src->m_ts > dst->m_ts)
+		return ERR_PTR(-EINVAL);
+
+	alen = min(len, DATALEN_MSG);
+	memcpy(dst + 1, src + 1, alen);
+
+	for (dst_pseg = dst->next, src_pseg = src->next;
+	     src_pseg != NULL;
+	     dst_pseg = dst_pseg->next, src_pseg = src_pseg->next) {
+
+		len -= alen;
+		alen = min(len, DATALEN_SEG);
+		memcpy(dst_pseg + 1, src_pseg + 1, alen);
+	}
+
+	dst->m_type = src->m_type;
+	dst->m_ts = src->m_ts;
+
+	return dst;
+}
+```
+
+- 然后我们知道调用句子是
+
+  ```c
+  msg = copy_msg(msg, copy);
+  ```
+
+- 所以我们需要保证取出的消息的m_ts（消息大小）要小于我们需要的消息大小(bufsz)
+- 当能主动修改msg_msg->m_ts的时候我们就可以读取最多一页的内存实现越界读取
+- 可以修改m_ts和m_list的next指针,堆喷其他结构体然后越界读从而获取一些内核地址
+
+### 任意写
+
+因为`do_msgsnd`调用了load_msg进行用户到内核的数据拷贝,所以我们可以利用userfault的机制暂停一个线程篡改msg->next指针实现任意地址写
+
+## sk_buff结构体
+
+> 参考文章:https://blog.csdn.net/wangquan1992/article/details/112572572
+>
+> https://ywhkkx.github.io/2022/06/30/msg_msg-sk_buff%E7%9A%84%E7%BB%84%E5%90%88%E5%88%A9%E7%94%A8+pipe_buffer%20attack/
+
+sk_buff也就是socket buffer,所以一般用于socket中
+
+**主要管理控制接受或发送数据包**,因为数据包没有固定大小,所以sk_buff也可以提供任意大小对象的分配写入和释放
+
+- Sk_buff本体不提供任何用户数据.用户数据单独存放在一个object中,然后sk_buff存放指向用户数据的指针
+
+  ![1656479312235-1663329194251](/Users/elegy/Pictures/blog/linux_kernel/1656479312235-1663329194251.png)
+
+- sk_buff 在内核网络协议栈中代表一个「包」，我们只需要**创建一对 socke，在上面发送与接收数据包就能完成 sk_buff 的分配与释放**
+
+## d3kheap复现
+
+### 信息
+
+```shell
+Linux (none) 5.13.19 #1 SMP Thu Feb 17 08:21:42 PST 2022 x86_64 GNU/Linux
+```
+
+### 申请chunk
+
+```c
+kmem_cache_alloc_trace(kmalloc_caches[10], 3264LL, 1024LL);
+```
+
+- 这里是kamlloc_caches[10]也就是2的10次方 1024也就是0x400大小的chunk
+
+### UAF
+
+因为是否可以free的标准是ref_count,但是ref_count的初始值为:1.所以我们可以free两次chunk或者UAF 这是个利用点
 

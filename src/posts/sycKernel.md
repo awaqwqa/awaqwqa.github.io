@@ -13,6 +13,63 @@ tag:
 
 > csapp:[《深入理解计算机系统（CSAPP）》全书学习笔记（详细） - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/455061631) 
 
+### 软链接
+
+> https://blog.csdn.net/annita2019/article/details/105481449
+>
+> https://blog.csdn.net/kfepiza/article/details/136095095
+
+```c
+ln -s 
+```
+
+创建软链接
+
+然后区分一下/usr/bin和/usr/local/bin的区别
+
+- `/usr/bin`下面的都是系统预装的可执行程序，系统升级有可能会被覆盖.
+- `/usr/local/bin` 目录是给用户放置自己的可执行程序.，不会被系统升级而覆盖同名文件。
+
+### 匿名页（TODO）
+
+### mount挂载
+
+> 参考文章:[【Linux】Linux的挂载原理 |MOUNT|挂载NAS|自动挂载-CSDN博客](https://blog.csdn.net/bandaoyu/article/details/123806859)
+>
+> [linux的mount结构与原理_linux mount原理-CSDN博客](https://blog.csdn.net/jinking01/article/details/105683360)
+>
+> mkdir 命令加了-p后可以在多级目录的父目录不存在的时候创建目录比如
+>
+> mkdir -p test/test2 如果test不存在就创建test
+>
+> 我们也可以通过fdisk -l 或者more /proc/partitiions查看系统硬盘分区情况
+
+- 挂载mount  /dev/sda3 /mnt
+
+  > **指的就是将设备文件中的顶级目录连接到Linux根目录下的某一目录，访问此目录就等同于访问设备文件**。
+  >
+  > 值得注意的是挂载操作会使得原有目录中文件被隐藏,所以我们习惯于创建一个新的目录作为挂载点
+
+  - /dev/sda3 是挂载的分区 根目录下的`/dev/`目录文件负责所有的硬件设备文件,当我们设备接入系统后,会在dev目录下创建一个目录文件比如/dev/sdb1 这个目录提供了一些基本的信息
+  - /mnt是挂载点
+  - 出现报错:**device is busy** 可以用`lsof`指令(list open file)查看一下正在被使用的文件 也可以用`fuser-m`
+
+- 解挂umount /mnt 
+
+- 参数
+
+  - -t 指定文件系统的类型
+  - -o 用于描述设备的挂载方式
+    - loop 把文件当作硬盘分区挂载上系统
+    - ro 只读
+    - rw读写
+
+### 回环设备（TODO）
+
+> 参考文章:[linux磁盘之回环设备 - jinzi - 博客园 (cnblogs.com)](https://www.cnblogs.com/aozhejin/p/15867559.html)
+>
+> 回环设备（ 'loopback device'）允许用户以一个普通磁盘文件虚拟成一个块设备。(**磁盘文件** --> **块设备**)
+
 ### 套接字
 
 > [套接字](https://so.csdn.net/so/search?spm=a2c6h.13046898.publish-article.48.25e16ffaF3Jssg&q=套接字)是一个重要的概念。套接字是一种用于网络通信的接口，它可以实现进程之间的通信和数据传输。在使用套接字进行网络编程时，关闭套接字是一个必要的操作。关闭套接字可以释放资源，避免程序出现内存泄漏等问题。在关闭套接字时，我们通常会用到 close() 和 shutdown() 函数。这两个函数虽然都能够关闭套接字，但是它们的使用方式和作用有所不同。
@@ -649,7 +706,7 @@ php内存管理中有三种颗粒度的内存块 也就是chunk page slot 每个
 
 ## Pwn linux kernel
 
-#### 调试
+### 调试
 
 环境拿下来后可以通过指令直接运行起内核 然后通过调试
 
@@ -726,6 +783,20 @@ qemu-system-x86_64 -initrd rootfs.cpio -kernel bzImage -append 'console=ttyS0 ro
 - 攻击手段就是利用在调用对`ptmx`驱动进行write操作的时候我们是利用的`tty_struct`结构体中虚表进行的操作 所以我们如果可以伪造这个vtable然后指向我们的可控区域 来实现函数的调用
 
 ### 堆喷/脏管道学习(TODO)
+
+### msg_msg消息队列(TODO)
+
+### kmalloc和vmalloc区别(TODO)
+
+### 缺页内核和用户态(userfaultfd)（TODO）
+
+> 如果要提升条件竞争的概率,可以采用userfaultfd
+
+### sk_buff(TODO)
+
+### dirty cow/pipe(TODO)
+
+### smep和smap的绕过(TODO)
 
 ## V8/jsc(TODO)
 
