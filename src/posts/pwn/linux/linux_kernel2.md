@@ -383,7 +383,7 @@ long __get_user_pages(struct task_struct *tsk, struct mm_struct *mm,
 		struct vm_area_struct **vmas, int *nonblocking)
 ```
 
-**__get_user_pages**函数 能够获取用户进程调用的虚拟地址之后的物理地址 也就是当进行写入私有映射的内存页时，会经过一个COW(写时拷贝)的过程（即复制只读页生成一个带有写权限的新页，原始页可能是私有保护不可写的）
+**__get_user_pages** 函数 能够获取用户进程调用的虚拟地址之后的物理地址 也就是当进行写入私有映射的内存页时，会经过一个COW(写时拷贝)的过程（ 即复制只读页生成一个带有写权限的新页，原始页可能是私有保护不可写的 ）
 
 ```c
 long __get_user_pages(struct task_struct *tsk, struct mm_struct *mm,
