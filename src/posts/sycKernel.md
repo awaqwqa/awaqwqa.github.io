@@ -502,10 +502,19 @@ func main() {
 ##### armv8
 
 - arm64架构大差不差 也就是把lr和栈底压入栈 然后栈减去
-
 - 寄存器名字叫做X了 X0-x7用作参数传递 X0用作函数返回值 x8用作调用号 x32是pc寄存器 x30也就是函数返回值 然后函数调用的时候直接将原本的sp压栈 然后sp减去一定值 最后再回来
-
 - BR指令 BLR指令
+
+##### 基础指令
+
+| 指令 | 目的 | 源   | 描述                                         |
+| ---- | ---- | ---- | -------------------------------------------- |
+| MOV  | R0   | R1   | 将 R1 里面的数据复制到 R0 中。               |
+| MRS  | R0   | CPSR | 将特殊寄存器 CPSR 里面的数据复制到 R0 中。   |
+| MSR  | CPSR | R1   | 将 R1 里面的数据复制到特殊寄存器 CPSR 里中。 |
+
+- 立即数用#十六进制数据来表示
+- LDR 
 
 ### mips架构的函数调用规范
 
@@ -883,4 +892,230 @@ qemu-system-x86_64 -initrd rootfs.cpio -kernel bzImage -append 'console=ttyS0 ro
   > [第十七节：从状态机的角度async和await的实现原理(新) - Yaopengfei - 博客园 (cnblogs.com)](https://www.cnblogs.com/yaopengfei/p/12848795.html)
 
 ### 日志框架
+
+## Android
+
+> 主要是应对这次的360面试,准备一些面试可能会考察的内容
+
+### dex 和class文件的区别
+
+> 参考文章:[Android Dex VS Class：实例图解剖析两种格式文件结构、优劣_dex文件格式-CSDN博客](https://blog.csdn.net/itermeng/article/details/79218060)
+
+当正常java程序编译后生成的是class字节码文件
+
+- class文件只存储一个类的信息
+- class文件其实不止可以是java文件文件生成的也可以是其他语言生成的
+  - python
+  - scale
+  - ...
+
+#### class文件
+
+- 包含信息
+
+  - **magic** 无符号4字节类型，是一个加密段，类似md5，用来判断class文件是否被篡改过
+  - **minor_version** 会显示最小适配的**JDK**版本
+
+  - **major_version** class文件生成的**JDK**版本
+
+  - 等其他相关信息
+
+- 弊端
+  - class文件加载速度慢 (**堆栈的加栈模式**)
+  - 因为class文件只能存储一个类文件,所以一个程序的class文件会非常多
+
+#### dex文件
+
+> 其实我这里的理解就是dex文件就是针对移动设备进行优化后的文件
+>
+> dex文件时包含了整个**工程**中所有类文件的信息,也就是可以有多个类集成在一个dex文件中
+
+dex可以被**DVM**识别,加载并执行的文件格式.同时也不仅仅是java才能编译为dex,c/c++也可以编译为dex文件
+
+dex文件结构相对而言对于class文件是比较复杂的,dex文件会去除class文件中冗余的信息整合后复用.
+
+一般可以通过`dx`指令将`class`文件生成为`dex`文件
+
+```shell
+dx --dex -- output Hello.dex Hello.class
+```
+
+![这里写图片描述](https://img-blog.csdn.net/20180126233025202?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvSVRlcm1lbmc=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast)
+
+- 可以发现dex文件中有个索引区 这里面记录了各种数据的索引 并且包含了对外部数据的索引
+
+### 全限定类名和非限定类名的区别
+
+> 参考文章:[什么叫做java类的全限定名-CSDN博客](https://blog.csdn.net/weixin_36873225/article/details/117060872)
+
+全限定类名：就是类名全称，带包路径的用点隔开，例如: java.lang.String。全限定名 = 包名+类型
+
+非限定类名也叫短名，就是我们平时说的类名.
+
+### smail语法
+
+> dex文件反编译之后就是Smali代码，所以说，Smali语言是Android虚拟机的反汇编语言
+
+### res/raw和asset的区别
+
+> 参考文章:[1-1.Android 下的 XML 文件（概念理解、存储位置理解）_android的xml文件-CSDN博客](https://blog.csdn.net/weixin_52173250/article/details/141808125)
+
+- res/raw和asset都是存放一些不需要被系统编译为二进制形式的文件,raw有原始的意思
+- 在**raw**文件夹的内容都会被映射到**R.java**中,所以我们可以直接通过**资源ID**进行访问即 R.raw.xxxxx
+- **raw**的子文件夹内容,**asset**文件夹不会被映射到R.java中
+- 相对而言**raw**的访问速度要比**assets**速度快一些
+
+### xml文件
+
+> 我们主要研究的android下的xml文件,通常有一些通用的元素组成
+>
+> 参考文章:[1-1.Android 下的 XML 文件（概念理解、存储位置理解）_android的xml文件-CSDN博客](https://blog.csdn.net/weixin_52173250/article/details/141808125)
+
+在安卓里面**xml**文件被广泛使用
+
+- 布局文件 (`res/layout`)
+- 字符串资源文件(`res/values/strings.xml`)
+- 颜色资源文件 (`res/values/colors.xml`)
+- 尺寸资源文件 (`res/values/dimens.xml`)
+- 安卓程序入口(`AndroidManifest.xml`)
+
+其中`AndroidManifest.xml`应该是最特殊的文件,这个文件里面包含了Android程序的入口,声明了一个android程序最基本的属性(`四大组件`),权限,API级别等
+
+### objection和frida
+
+## IDA
+
+### 几种断点 软断点 硬件断点
+
+> [软断点、硬件断点和内存断点(逆向基础知识) - 知乎](https://zhuanlan.zhihu.com/p/620612511)
+
+- 软断点
+  - 其实就是将目标地址改指令为中断指令让cpu执行到这里的时候停下来,然后再替换为原来的指令从而实现断点的功能
+- 硬件断点
+  - 是通过cpu上一组特殊的寄存器来实现的,比如x86就是DR0-DR7寄存器
+    - DR0-R3都是硬件断点的内存地址,可以使用4个硬件断点
+
+- 内存断点,本质不是真正的断点,而是改变内存的内存权限,类似于却也中断 我们应该可以通过userfaultfd这种机制来实现一个较为完善的内存缺页中断
+
+## 360面试准备
+
+### Arm中的特殊寄存器
+
+- sp寄存器也就是栈顶寄存器用于保存栈顶的值
+- fp( x29寄存器) 栈基址寄存器用于保存栈底的地址
+- lr (x30寄存器) 专门用来保存bl指令的下一条指令的内存地址
+- zr( x31寄存器) xzr/wzr 也就是固定为0 写进去表明丢弃结果,读取就是0
+- pc寄存器 也就是保存将要执行的指令的地址
+
+### arm函数调用规范
+
+#### 64位
+
+- 传参
+  - x0-x7用于存放函数的前8个参数,其余的压栈.
+
+- 返回值
+  - 函数返回值
+- 
+
+### Mc实际分析
+
+```assembly
+SUB             SP, SP, #0x90
+STP             X24, X23, [SP,#0x80+var_30]
+STP             X22, X21, [SP,#0x80+var_20]
+STP             X20, X19, [SP,#0x80+var_10]
+STP             X29, X30, [SP,#0x80+var_s0]
+ADD             X29, SP, #0x80
+MRS             X23, #3, c13, c0, #2
+LDR             X8, [X23,#0x28]
+MOV             X20, X0
+STUR            X8, [X29,#var_38]
+ADRP            X8, #0xE33F000
+LDR             X8, [X8,#0xBB8]
+CBZ             X8, loc_4A3FF00
+```
+
+- SUB 将sp指针展开
+- 再开始从栈中取值 从而获取变量
+
+#### STP & LDR指令
+
+> 参考文章:[【ARM 常见汇编指令学习 2 -- 存储指令 STP 与 LDP】_arm stp-CSDN博客](https://blog.csdn.net/sinat_32960911/article/details/131533128)
+>
+> [stp 指令_stp指令-CSDN博客](https://blog.csdn.net/wmzjzwlzs/article/details/124513127)
+>
+> stp指令可以理解为str指令的变种也就是pair 一对寄存器
+
+```assembly
+STP <Wt1>, <Wt2>, [<Xn|SP>{, #<imm>}]
+STP <Xt1>, <Xt2>, [<Xn|SP>{, #<imm>}]
+# LDP指令
+LDP <Wt1>, <Wt2>, [<Xn|SP>{, #<imm>}]
+LDP <Xt1>, <Xt2>, [<Xn|SP>{, #<imm>}]
+```
+
+- wt1表示32位寄存器
+- xt1表示64位寄存器
+
+STP一般是一次性将两个寄存器的值存储到目标的内存地址中,
+
+比如执行下方指令
+
+```assembly
+stp x29, x30, [sp, #0x10]  ;
+```
+
+- 就是在sp指向地址偏向0x10位置的地方开始依次向高地址存储x29,x30寄存器
+
+如果在操作后面添加!符号那么就多了一层含义
+
+```assembly
+stp q6, q7, [sp, #-32]!
+```
+
+就等效为
+
+```assembly
+sub sp, sp, #32
+stp q6, q7, [sp]
+```
+
+- 也就是在进行存储操作后sp寄存器的值发生了改变
+
+#### B BL BLR BR BRK RET指令
+
+**B**
+
+相当于直接跳转到某个地址也就是JMP的操作,并且这个操作不会改变x30寄存器的值也就是lr寄存器的值
+
+还可以配合条件一起使用
+
+```assembly
+CMP R1 ，＃ 0 ；  当 CPSR 寄存器中的 Z 条件码置位时，程序跳转到标号 Label 处执行
+BEQ Label
+```
+
+**BL**
+
+先将下一条指令保存到寄存器LR(x30)中,然后再进行跳转 一般用于不同函数直接进行调用 同样和B一样可以带条件进行跳转
+
+**BR**
+
+跳转到某个寄存器指向的地址,不会改变LR寄存器的值也就是x30寄存器
+
+#### CBZ指令
+
+> 参考文章:[ARM64 指令用法学习整理_cbz指令-CSDN博客](https://blog.csdn.net/mmbb26/article/details/132196832)
+
+也是一种条件分支指令,用于在寄存器上进行比较,如果该寄存器的值为0 则直接跳转到目标地址
+
+```assembly
+CBZ X0, Label     ; 如果X0的值为零，跳转到Label标签处
+...               ; 如果X0的值不为零，继续执行下一条指令
+```
+
+#### Arm架构的立即数
+
+**ARM指令是精简指令集，指令长度固定都是32位** 所以能表示的立即数范围是很有限制的,我们只能通过其他间接的方式去传递
 

