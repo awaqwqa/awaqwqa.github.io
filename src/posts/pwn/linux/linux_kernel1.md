@@ -384,11 +384,11 @@ struct msg_queue {
 
 当**msg_msg**结构体+我们的消息大于**pagesize**的时候,会去主动分配一个新的内存页面也就是**msg_msgseg** 类似于下面的状态
 
-![QQ_1729066251434](/Users/elegy/Library/Containers/com.tencent.qq/Data/tmp/QQ_1729066251434.png)
+![QQ_1729066251434](https://awaqwqa.github.io/img/linux_kernel1/QQ_1729066251434.png)
 
 然后**msg_msg**又是和**msg_queue**构成双向循环链表 类似于下方. (这很类似于largebin的形式)
 
-![QQ_1729066349724](/Users/elegy/Library/Containers/com.tencent.qq/Data/tmp/QQ_1729066349724.png)
+![QQ_1729066349724](https://awaqwqa.github.io/img/linux_kernel1/QQ_1729066349724.png)
 
 这就给我们申请小于0x1000大小的任意主消息和副消息的能力了,这很适合用于堆喷!!!
 
