@@ -4,3 +4,4 @@ src/.vuepress/.temp/
 src/.vuepress/dist/
 **/*.DB_Store
 *.DB_Store
+src/posts/TODO/.DS_Store
