@@ -80,7 +80,7 @@ class EventLoop:
   print(g)
   ```
 
-  ![image-20240406165914445](https://awaqwqa.github.io/img/asyncio/image-20240406165914445.png)
+  ![image-20240406165914445](https://VitaElegy.github.io/img/asyncio/image-20240406165914445.png)
 
 - 生成器对象.send(arg)后args会变成yield的返回值 出现在函数内部 并且当我调用send的时候 函数才会真正执行 send的返回值是yield右侧的值
 
@@ -97,7 +97,7 @@ class EventLoop:
   print(g.send(3))
   ```
 
-  ![image-20240406170144040](https://awaqwqa.github.io/img/asyncio/image-20240406170144040.png)
+  ![image-20240406170144040](https://VitaElegy.github.io/img/asyncio/image-20240406170144040.png)
 
 ## 基本使用
 

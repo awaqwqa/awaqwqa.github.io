@@ -4,7 +4,7 @@ import { enSidebar, zhSidebar } from "./sidebar/index.js";
 import { MR_HOPE_AVATAR } from "./logo.js";
 
 export default hopeTheme({
-  hostname: "https://mister-hope.github.io",
+  hostname: "https://VitaElegy.github.io",
 
   author: {
     name: "Elegy",
@@ -13,7 +13,7 @@ export default hopeTheme({
 
   iconAssets: "fontawesome-with-brands",
 
-  logo: "https://awaqwqa.github.io/石头门.jpg",
+  logo: "https://VitaElegy.github.io/石头门.jpg",
 
   repo: "vuepress-theme-hope/vuepress-theme-hope",
 

@@ -35,11 +35,11 @@ tag:
 
   > 需要注意的是 prev_size有且仅当 上一个chunk处于free状态的时候来表示 上一个chunk的大小否则 就作为上一个chunk的一部分来存数据
 
-  ![chunk_struct](https://awaqwqa.github.io/img/chunk/chunk.jpg)
+  ![chunk_struct](https://VitaElegy.github.io/img/chunk/chunk.jpg)
 
 - `alloced chunk`  由于是使用状态所以 在使用的就只有prev_size 和size两个部分
 
-  ![alloced_chunk](https://awaqwqa.github.io/img/chunk/alloced_chunk.png)
+  ![alloced_chunk](https://VitaElegy.github.io/img/chunk/alloced_chunk.png)
 
 - `free chunk`常见的就是携带fd 和bk 然后当p为0的时候 两个chunk会合并为一个较大的chunk
 - `fast bin`的chunk

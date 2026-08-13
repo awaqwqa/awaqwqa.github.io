@@ -22,7 +22,7 @@ tag:
 
   > 这个指令可以查到当前的窗口的包和目前的class
 
-  ![pack_name](https://awaqwqa.github.io/img/objection/pack_name.png)
+  ![pack_name](https://VitaElegy.github.io/img/objection/pack_name.png)
 
   
 
@@ -44,7 +44,7 @@ tag:
   android hooking watch class_method com.mojang.minecraftpe.MainActivity --dump-args --dump-backtrace --dump-return
   ```
 
-  ![image-20240320105839523](https://awaqwqa.github.io/img/objection/image-20240320105839523.png)
+  ![image-20240320105839523](https://VitaElegy.github.io/img/objection/image-20240320105839523.png)
 
   - 出现了报错
 
@@ -54,7 +54,7 @@ tag:
     android hooking watch class com.mojang.minecraftpe.MainActivity --dump-args --dump-backtrace --dump-return
     ```
 
-  ![img](https://awaqwqa.github.io/img/objection/img.png)
+  ![img](https://VitaElegy.github.io/img/objection/img.png)
 
 - 调用了的函数
 
@@ -87,20 +87,20 @@ tag:
  android hooking watch class_method com.mojang.minecraftpe.MainActivity.isTextWidgetActive --dump-args --dump-backtrace --dump-return
 ```
 
-![image-20240320113131596](https://awaqwqa.github.io/img/objection/image-20240320113131596.png)
+![image-20240320113131596](https://VitaElegy.github.io/img/objection/image-20240320113131596.png)
 
 - 这里看名字就大概知道isTextWidgetActive是检测
 - 然后这个东西被getCursorPosition调用的
 
 ## getCursorPosition
 
-![image-20240320113426950](https://awaqwqa.github.io/img/objection/image-20240320113426950.png)
+![image-20240320113426950](https://VitaElegy.github.io/img/objection/image-20240320113426950.png)
 
 - 返回值-1
 
 ### TICK
 
-![image-20240320114400575](https://awaqwqa.github.io/img/objection/image-20240320114400575.png)
+![image-20240320114400575](https://VitaElegy.github.io/img/objection/image-20240320114400575.png)
 
 
 

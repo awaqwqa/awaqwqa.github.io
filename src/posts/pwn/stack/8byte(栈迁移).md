@@ -47,11 +47,11 @@ tag:
 
 - 那么下面是实现原理图
 
-  ![原理](https://awaqwqa.github.io/img/栈迁移/原理.png)
+  ![原理](https://VitaElegy.github.io/img/栈迁移/原理.png)
 
   - 这里是执行`mov esp ,ebp;`这个操作之前的栈结构 我们在`ebp`这个位置放入我们我们希望这个栈最终`落脚点` 然后就会执行
 
-  - ​	![原理2](https://awaqwqa.github.io/img/栈迁移/原理2.png)
+  - ​	![原理2](https://VitaElegy.github.io/img/栈迁移/原理2.png)
 
   - 这里就是`pop ebp;`这个操作 因为 pop操作我们的rsp向下移动一格 ebp寄存器 存入fake_ebp1_addr
 
@@ -72,7 +72,7 @@ tag:
 
   - 然后 把fake_ebp2的地址给了rbp rsp向下跑一下 
 
-  - ![原理3](https://awaqwqa.github.io/img/栈迁移/原理3.png)
+  - ![原理3](https://VitaElegy.github.io/img/栈迁移/原理3.png)
 
     > 所以这里我们是需要构造第二个fake_ebp的 
 

@@ -26,13 +26,13 @@ tag:
 
 ### 获取fp
 
-![image-20240328105659625](https://awaqwqa.github.io/img/io_file_study2/image-20240328105659625.png)
+![image-20240328105659625](https://VitaElegy.github.io/img/io_file_study2/image-20240328105659625.png)
 
 ### 所有的文件流
 
 > 我们主要的利用都是这里 所以重点分析这里
 
-![image-20240328105736546](https://awaqwqa.github.io/img/io_file_study2/image-20240328105736546.png)
+![image-20240328105736546](https://VitaElegy.github.io/img/io_file_study2/image-20240328105736546.png)
 
 #### 条件
 
@@ -118,15 +118,15 @@ IO_validate_vtable (const struct _IO_jump_t *vtable)
 
 - 没调用scanf之前
 
-  ![image-20240421003231028](https://awaqwqa.github.io/img/io_file_study2/image-20240421003231028.png)
+  ![image-20240421003231028](https://VitaElegy.github.io/img/io_file_study2/image-20240421003231028.png)
 
 - 调用scanf后
 
-  ![image-20240421154819197](https://awaqwqa.github.io/img/io_file_study2/image-20240421154819197.png)
+  ![image-20240421154819197](https://VitaElegy.github.io/img/io_file_study2/image-20240421154819197.png)
   
   - 这样可能不方便观察 我们带符号打印一下
   
-    ![image-20240421154901421](https://awaqwqa.github.io/img/io_file_study2/image-20240421154901421.png)
+    ![image-20240421154901421](https://VitaElegy.github.io/img/io_file_study2/image-20240421154901421.png)
   
   - 可以发现`_IO_buf_base`和` _IO_buf_end`被赋值 分别是缓冲区chunk的开头和末尾 那么我们如果可以劫持这两个 修改这两个值就可以实现任意地址的修改
 

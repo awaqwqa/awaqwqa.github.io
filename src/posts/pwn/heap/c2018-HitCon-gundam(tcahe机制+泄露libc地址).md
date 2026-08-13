@@ -53,17 +53,17 @@ tag:
 
 - 结构图
 
-![机制](https://awaqwqa.github.io/img/tcahe/tcahe结构体.png)
+![机制](https://VitaElegy.github.io/img/tcahe/tcahe结构体.png)
 
 #### 利用tcache泄露地址
 
 > `tcache`位于heap最前端 也属于一个堆块
 
-- 用vmmap指令查找heap最开始的位置![vmmap](https://awaqwqa.github.io/img/tcahe/vmmap.png)
+- 用vmmap指令查找heap最开始的位置![vmmap](https://VitaElegy.github.io/img/tcahe/vmmap.png)
 
 - 用x/26gx 指令来查看对应地址 堆结构 （`x/26gx 0x55e22cd98000+0x10`）
 
-  ![heap](https://awaqwqa.github.io/img/tcahe/tcache_heap.png)
+  ![heap](https://VitaElegy.github.io/img/tcahe/tcache_heap.png)
 
   > 也就是最后一个加入tcache的chunk
 
@@ -75,13 +75,13 @@ tag:
 
 - 那么输入指令后我们找到了这个chunk
 
-  ![unsorted_bins](https://awaqwqa.github.io/img/tcahe/unsorted_bin.png)
+  ![unsorted_bins](https://VitaElegy.github.io/img/tcahe/unsorted_bin.png)
 
   - 我们可以发现这个地方fd和bk都指向了 同一个地址 也就是**main_arena+88**(unsortedbin头结点)
 
 - 然后我们就得到了main_arena的地址
 
-- 再去查找libc的基地址 **vmmap**得到的:![libc_addr](https://awaqwqa.github.io/img/tcahe/libc_addr.png)
+- 再去查找libc的基地址 **vmmap**得到的:![libc_addr](https://VitaElegy.github.io/img/tcahe/libc_addr.png)
 
 - 计算:
 

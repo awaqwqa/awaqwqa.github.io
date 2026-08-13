@@ -19,11 +19,11 @@ tag:
 
   - 检查size是否对得上
 
-  ![image-20240325110240440](https://awaqwqa.github.io/img/vctf_leak_libc/image-20240325110240440.png)
+  ![image-20240325110240440](https://VitaElegy.github.io/img/vctf_leak_libc/image-20240325110240440.png)
 
   - unlink检查
 
-    ![image-20240325110339049](https://awaqwqa.github.io/img/vctf_leak_libc/image-20240325110339049.png)
+    ![image-20240325110339049](https://VitaElegy.github.io/img/vctf_leak_libc/image-20240325110339049.png)
 
 ## 利用原理
 
@@ -73,11 +73,11 @@ tag:
 -  free 一个chunk 让两个chunk(chunk3 与chun2)合并 这样就保留了fd(chunk 0)和bk(chunk6)在一个大的chunk中
 - 然后我们将这个大chunk分割为chunk3 和chunk4 让我们自己构造的size刚好覆盖在原chunk3 size 位置 详细看下方图
 
-![image-20240325111430446](https://awaqwqa.github.io/img/vctf_leak_libc/image-20240325111430446.png)
+![image-20240325111430446](https://VitaElegy.github.io/img/vctf_leak_libc/image-20240325111430446.png)
 
 - 分割大chunk 并且构造size
 
-  ![image-20240325111521964](https://awaqwqa.github.io/img/vctf_leak_libc/image-20240325111521964.png)
+  ![image-20240325111521964](https://VitaElegy.github.io/img/vctf_leak_libc/image-20240325111521964.png)
 
 ​	
 
@@ -99,7 +99,7 @@ tag:
 
 - 示意图
 
-  ![image-20240325114920279](https://awaqwqa.github.io/img/vctf_leak_libc/image-20240325114920279.png)
+  ![image-20240325114920279](https://VitaElegy.github.io/img/vctf_leak_libc/image-20240325114920279.png)
 
 ### 构造BK->fd
 
@@ -122,11 +122,11 @@ tag:
 
 - 示意图
 
-![image-20240325115900055](https://awaqwqa.github.io/img/vctf_leak_libc/image-20240325115900055.png)
+![image-20240325115900055](https://VitaElegy.github.io/img/vctf_leak_libc/image-20240325115900055.png)
 
 - add后
 
-![image-20240325135125545](https://awaqwqa.github.io/img/vctf_leak_libc/image-20240325135125545.png)
+![image-20240325135125545](https://VitaElegy.github.io/img/vctf_leak_libc/image-20240325135125545.png)
 
 ### 构造合并chunk
 
@@ -150,15 +150,15 @@ tag:
 
 - 首先我们看一下 fakechunk 0x550偏移位置坐标在哪里
 
-  ![image-20240325145741621](https://awaqwqa.github.io/img/vctf_leak_libc/image-20240325145741621.png)
+  ![image-20240325145741621](https://VitaElegy.github.io/img/vctf_leak_libc/image-20240325145741621.png)
 
-  ![image-20240325145825097](https://awaqwqa.github.io/img/vctf_leak_libc/image-20240325145825097.png)
+  ![image-20240325145825097](https://VitaElegy.github.io/img/vctf_leak_libc/image-20240325145825097.png)
 
 - 根据地址我们知道 也就是我们要修改的chunk为chunk 5 那么我们就去free掉chunk 4(大小0x110)然后malloc回来 写入数据覆盖到chunk 5的prev_inuse 并且构造好0x550的prev_size
 
 - 示意图
 
-  ![image-20240325150321671](https://awaqwqa.github.io/img/vctf_leak_libc/image-20240325150321671.png)
+  ![image-20240325150321671](https://VitaElegy.github.io/img/vctf_leak_libc/image-20240325150321671.png)
 
 - 此时我们成功完成构造 最后只需要 free掉chunk 5触发合并机制 然后我们成功完成一次overlapping 可喜可贺
 

@@ -117,7 +117,7 @@ struct _IO_jump_t
   >
   > _io_list_all ->fp->stderr  (fp._chain->stderr) 这里上大佬的图
 
-  ![fpmKdFRYo6VeTh5](https://awaqwqa.github.io/img/io_file/fpmKdFRYo6VeTh5.png)
+  ![fpmKdFRYo6VeTh5](https://VitaElegy.github.io/img/io_file/fpmKdFRYo6VeTh5.png)
 
   ```c
    _IO_new_file_init_internal (&new_f->fp);//third：将file链接到_IO_list_all
@@ -162,7 +162,7 @@ int main(void)
 
 ### 进入open64
 
-![image-20240327010609541](https://awaqwqa.github.io/img/io_file/image-20240327010609541.png)
+![image-20240327010609541](https://VitaElegy.github.io/img/io_file/image-20240327010609541.png)
 
 ### malloc 部分
 
@@ -181,11 +181,11 @@ int main(void)
 
 #### 调试
 
-![image-20240327011453742](https://awaqwqa.github.io/img/io_file/image-20240327011453742.png)
+![image-20240327011453742](https://VitaElegy.github.io/img/io_file/image-20240327011453742.png)
 
 - malloc 后new_f的值
 
-  ![image-20240327011540293](https://awaqwqa.github.io/img/io_file/image-20240327011540293.png)
+  ![image-20240327011540293](https://VitaElegy.github.io/img/io_file/image-20240327011540293.png)
 
   ```c
   $2 = {
@@ -370,7 +370,7 @@ _IO_no_init (FILE *fp, int flags, int orientation,
 
 #### 调试
 
-![image-20240327011904072](https://awaqwqa.github.io/img/io_file/image-20240327011904072.png)
+![image-20240327011904072](https://VitaElegy.github.io/img/io_file/image-20240327011904072.png)
 
 - 执行后new_f变化
 
@@ -396,15 +396,15 @@ _IO_JUMPS(&new_f->fp) = &_IO_file_jumps;
 
 #### 调试
 
-![image-20240327013258111](https://awaqwqa.github.io/img/io_file/image-20240327013258111.png)
+![image-20240327013258111](https://VitaElegy.github.io/img/io_file/image-20240327013258111.png)
 
 - 我们对_io_file_jumps数据进行查看一下 满足好奇心
 
   > 可以发现就是塞满了各种函数
 
-  ![image-20240327013517671](https://awaqwqa.github.io/img/io_file/image-20240327013517671.png)
+  ![image-20240327013517671](https://VitaElegy.github.io/img/io_file/image-20240327013517671.png)
 
-  ![image-20240327013607798](https://awaqwqa.github.io/img/io_file/image-20240327013607798.png)
+  ![image-20240327013607798](https://VitaElegy.github.io/img/io_file/image-20240327013607798.png)
 
 ### 链接部分
 
@@ -416,7 +416,7 @@ _IO_new_file_init_internal(&new_f->fp);
 
 #### 调试
 
-![image-20240327013056474](https://awaqwqa.github.io/img/io_file/image-20240327013056474.png)
+![image-20240327013056474](https://VitaElegy.github.io/img/io_file/image-20240327013056474.png)
 
 - _io_new_file_init_internal函数
 
@@ -435,7 +435,7 @@ _IO_new_file_init_internal(&new_f->fp);
   
   ```
 
-  ![image-20240327014215956](https://awaqwqa.github.io/img/io_file/image-20240327014215956.png)
+  ![image-20240327014215956](https://VitaElegy.github.io/img/io_file/image-20240327014215956.png)
 
 - _IO_link_in
 
@@ -455,7 +455,7 @@ _IO_new_file_init_internal(&new_f->fp);
 
 - 变化
 
-  ![image-20240327014539222](https://awaqwqa.github.io/img/io_file/image-20240327014539222.png)
+  ![image-20240327014539222](https://VitaElegy.github.io/img/io_file/image-20240327014539222.png)
 
   - _chain链接`_IO_2_1_stderr`
 
@@ -466,13 +466,13 @@ _IO_new_file_init_internal(&new_f->fp);
 
   > 可以发现和我们的fp一模一样 所以我们的`_IO_list_all`此时是指向的我们fp
 
-  ![image-20240327015022273](https://awaqwqa.github.io/img/io_file/image-20240327015022273.png)
+  ![image-20240327015022273](https://VitaElegy.github.io/img/io_file/image-20240327015022273.png)
 
 - 查看`_IO_2_1_stderr_`
 
   > 可以发现_chain是指向的其他file 所以此时整条链是 _IO_list_all->fp 然后后面的通过_chain链接起来
 
-  ![image-20240327015201921](https://awaqwqa.github.io/img/io_file/image-20240327015201921.png)
+  ![image-20240327015201921](https://VitaElegy.github.io/img/io_file/image-20240327015201921.png)
 
   
 
@@ -487,15 +487,15 @@ if (_IO_file_fopen((FILE *)new_f, filename, mode, is32) != NULL)
 
 #### 调试
 
-![image-20240327015402527](https://awaqwqa.github.io/img/io_file/image-20240327015402527.png)
+![image-20240327015402527](https://VitaElegy.github.io/img/io_file/image-20240327015402527.png)
 
 - _io_file_fopen函数 太长了 主要就是判断打开模式 然后调用 `io_file_open`函数来打开
 
-  ![image-20240327020322439](https://awaqwqa.github.io/img/io_file/image-20240327020322439.png)
+  ![image-20240327020322439](https://VitaElegy.github.io/img/io_file/image-20240327020322439.png)
 
 - _io_file_open函数 最终调用open 去打开文件
 
-  ![image-20240327020501416](https://awaqwqa.github.io/img/io_file/image-20240327020501416.png)
+  ![image-20240327020501416](https://VitaElegy.github.io/img/io_file/image-20240327020501416.png)
 
 - fp 变化
 
@@ -503,5 +503,5 @@ if (_IO_file_fopen((FILE *)new_f, filename, mode, is32) != NULL)
 
   - _offset变为了-1
 
-    ![image-20240327020644254](https://awaqwqa.github.io/img/io_file/image-20240327020644254.png)
+    ![image-20240327020644254](https://VitaElegy.github.io/img/io_file/image-20240327020644254.png)
 

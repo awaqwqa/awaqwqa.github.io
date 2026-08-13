@@ -173,7 +173,7 @@ __libc_malloc->
   }
   ```
 
-  ![image-20240506184605509](https://awaqwqa.github.io/img/thread_pwn/image-20240506184605509.png)
+  ![image-20240506184605509](https://VitaElegy.github.io/img/thread_pwn/image-20240506184605509.png)
 
 ### **arena_get2**
 

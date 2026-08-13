@@ -14,19 +14,19 @@ tag:
 
 - main函数
 
-​		![main](https://awaqwqa.github.io/img/hgame/week3/off_by_one/main.png)
+​		![main](https://VitaElegy.github.io/img/hgame/week3/off_by_one/main.png)
 
 - add函数
 
-  ![add](https://awaqwqa.github.io/img/hgame/week3/off_by_one/add.png)
+  ![add](https://VitaElegy.github.io/img/hgame/week3/off_by_one/add.png)
 
 - delete函数
 
-  ![delete](https://awaqwqa.github.io/img/hgame/week3/off_by_one/delete.png)
+  ![delete](https://VitaElegy.github.io/img/hgame/week3/off_by_one/delete.png)
 
 - show函数
 
-  ![show](https://awaqwqa.github.io/img/hgame/week3/off_by_one/show.png)
+  ![show](https://VitaElegy.github.io/img/hgame/week3/off_by_one/show.png)
 
 ## 原理
 
@@ -121,7 +121,7 @@ r.interactive()
 
 - 然后我发现一个状况 就是新获得`unsroted bin`中的chunk fd和bk都被清空了
 
-  ![empty](https://awaqwqa.github.io/img/hgame/week3/off_by_one/unsortedBin.png)
+  ![empty](https://VitaElegy.github.io/img/hgame/week3/off_by_one/unsortedBin.png)
 
 - 并且通过测试发现只要是刚好要malloc的chunk大小如何符合 这个`unsortedbin`的chunk的大小就会被清空
 - 所以尝试其他思路

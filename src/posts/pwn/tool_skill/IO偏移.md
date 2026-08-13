@@ -18,7 +18,7 @@ tag:
   ptype /o struct xxxx // 可以获取结构体的偏移量
   ```
 
-  ![image-20241027104306803](https://awaqwqa.github.io/img/IO偏移/image-20241027104306803.png)
+  ![image-20241027104306803](https://VitaElegy.github.io/img/IO偏移/image-20241027104306803.png)
 
 - 查看变量的类型
 
@@ -26,7 +26,7 @@ tag:
    ptype 变量 // 可以查看变量类型
   ```
 
-  ![image-20241027104229082](https://awaqwqa.github.io/img/IO偏移/image-20241027104229082.png)
+  ![image-20241027104229082](https://VitaElegy.github.io/img/IO偏移/image-20241027104229082.png)
 
 ## largebin attack
 

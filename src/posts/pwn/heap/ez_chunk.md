@@ -84,7 +84,7 @@ tag:
 
 - **获取fd与bk**
 
-  - 通过p的fd/bk去获取前面一个chunk的`fd`和后面一个chunk的`bk`![直观图](https://awaqwqa.github.io/img/寻找.png)
+  - 通过p的fd/bk去获取前面一个chunk的`fd`和后面一个chunk的`bk`![直观图](https://VitaElegy.github.io/img/寻找.png)
 
 - **检查**
 
@@ -117,7 +117,7 @@ tag:
 
     - 等效为:` P->fd->bk = p->bk`与` P->bk->fd = p->fd`
 
-    > 这里相当于让前后的chunk连接起来了 把中间的chunk忽略掉![脱链](https://awaqwqa.github.io/img/脱链.jpeg)
+    > 这里相当于让前后的chunk连接起来了 把中间的chunk忽略掉![脱链](https://VitaElegy.github.io/img/脱链.jpeg)
 
 
 ### 调试技巧
@@ -128,6 +128,6 @@ tag:
 
 ## 学习路线:
 
-![学习路线](https://awaqwqa.github.io/img/学习路线图.png)
+![学习路线](https://VitaElegy.github.io/img/学习路线图.png)
 
 ​                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    

@@ -40,7 +40,7 @@ if (in_smallbin_range (nb)){
 
 ## 漏洞利用图
 
-![image-20240319205119155](https://awaqwqa.github.io/img/house_of_lore/image-20240319205119155.png)
+![image-20240319205119155](https://VitaElegy.github.io/img/house_of_lore/image-20240319205119155.png)
 
 - 这里我们可以直观看见bck victim bin的相对位置 这里我简化了部分链 
 
@@ -54,4 +54,4 @@ if (in_smallbin_range (nb)){
 
     > 这样修改victim 中bk值 然后构造目标地址+0x18位置的地址为victim的地址 即可完成劫持 我们就可以malloc一个
 
-    ![img](https://awaqwqa.github.io/img/house_of_lore/img.png)
+    ![img](https://VitaElegy.github.io/img/house_of_lore/img.png)

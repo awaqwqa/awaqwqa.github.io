@@ -23,29 +23,29 @@
 
 > 也就是覆盖`FILE`结构体0xd8偏移位置的数据 为`_IO_wstrn_jumps`地址
 
-![image-20240423173604690](https://awaqwqa.github.io/img/house_of_apple/image-20240423173604690.png)
+![image-20240423173604690](https://VitaElegy.github.io/img/house_of_apple/image-20240423173604690.png)
 
 ### 触发exit
 
 - fcloseall
 
-![image-20240423194735581](https://awaqwqa.github.io/img/house_of_apple/image-20240423194735581.png)
+![image-20240423194735581](https://VitaElegy.github.io/img/house_of_apple/image-20240423194735581.png)
 
 - _IO_cleanup
 
-  ![image-20240423194855564](https://awaqwqa.github.io/img/house_of_apple/image-20240423194855564.png)
+  ![image-20240423194855564](https://VitaElegy.github.io/img/house_of_apple/image-20240423194855564.png)
 
 ### 调用_IO_wstrn_overflow
 
 - `_IO_wstrn_jumps`:
 
-  ![image-20240423173959024](https://awaqwqa.github.io/img/house_of_apple/image-20240423173959024.png)
+  ![image-20240423173959024](https://VitaElegy.github.io/img/house_of_apple/image-20240423173959024.png)
 
 - 提取`vatble`(_IO_wstrn_jumps)调用overflow
-  - ![image-20240423174606432](https://awaqwqa.github.io/img/house_of_apple/image-20240423174606432.png)
+  - ![image-20240423174606432](https://VitaElegy.github.io/img/house_of_apple/image-20240423174606432.png)
 
 - 调用`_IO_wstrn_jumps`的`_IO_wstrn_overflow`函数
-  - ![image-20240423174817889](https://awaqwqa.github.io/img/house_of_apple/image-20240423174817889.png)
+  - ![image-20240423174817889](https://VitaElegy.github.io/img/house_of_apple/image-20240423174817889.png)
 
 ### 覆写数据
 
@@ -79,7 +79,7 @@ struct _IO_FILE_complete
 };
 ```
 
-- ![image-20240423181313898](https://awaqwqa.github.io/img/house_of_apple/image-20240423181313898.png)
+- ![image-20240423181313898](https://VitaElegy.github.io/img/house_of_apple/image-20240423181313898.png)
 
 #### 结构体`_IO_wide_data`
 
@@ -112,7 +112,7 @@ struct _IO_wide_data
 
 - 查看一下偏移 gdb使用指令:`p *&_IO_wide_data_0`和`tel &_IO_wide_data_0` 
 
-  ![image-20240423181623582](https://awaqwqa.github.io/img/house_of_apple/image-20240423181623582.png)
+  ![image-20240423181623582](https://VitaElegy.github.io/img/house_of_apple/image-20240423181623582.png)
 
 #### 结构体` _IO_wstrnfile`
 
@@ -129,7 +129,7 @@ typedef struct
 
 ### 示意图
 
-![image-20240425164628090](https://awaqwqa.github.io/img/house_of_apple/image-20240425164628090.png)
+![image-20240425164628090](https://VitaElegy.github.io/img/house_of_apple/image-20240425164628090.png)
 
 ## house_of_apple 2原理
 
@@ -249,7 +249,7 @@ const struct _IO_jump_t _IO_wfile_jumps_maybe_mmap libio_vtable =
 
 > 总结就是(仅伪造_wide_data) 我们要伪造三个chunk 一个在`_wide_data`(0xa0)位置写入指针指向第二个chunk 然后第二个chunk要在`_wide_vtable`（0xe0）位置写第三个chunk 0x18位置写入我们要触发的函数 这样就完成了一次函数的劫持
 
-![image-20240425165104955](https://awaqwqa.github.io/img/house_of_apple/image-20240425165104955.png)
+![image-20240425165104955](https://VitaElegy.github.io/img/house_of_apple/image-20240425165104955.png)
 
 #### 原理脚本
 

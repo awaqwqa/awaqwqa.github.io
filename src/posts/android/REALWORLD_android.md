@@ -33,7 +33,7 @@ adb pull target_path
 
 提取成功
 
-![image-20241218112002935](https://awaqwqa.github.io/img/REALWORLD_android/image-20241218112002935.png)
+![image-20241218112002935](https://VitaElegy.github.io/img/REALWORLD_android/image-20241218112002935.png)
 
 ## 分析databases
 
@@ -41,7 +41,7 @@ adb pull target_path
 
 这里我们使用的工具是**DataGrip**
 
-![image-20241218112347969](https://awaqwqa.github.io/img/REALWORLD_android/image-20241218112347969.png)
+![image-20241218112347969](https://VitaElegy.github.io/img/REALWORLD_android/image-20241218112347969.png)
 
 **downloader**
 
@@ -65,6 +65,6 @@ adb pull target_path
 - shared_prefs/curUid.xml 可以获取当前的uid
 - shared_prefs/login_info_f.xml可以获取用户名 uid 个人签名 头像等信息
 
-![image-20241219142158333](https://awaqwqa.github.io/img/REALWORLD_android/image-20241219142158333.png)
+![image-20241219142158333](https://VitaElegy.github.io/img/REALWORLD_android/image-20241219142158333.png)
 
 - 然后根据uid去获取db就行了

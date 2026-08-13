@@ -20,11 +20,11 @@ tag :
 
 - 首先是add user部分 存在off_by_one漏洞
 
-  ![image-20240317100413787](https://awaqwqa.github.io/img/high_glibc_overlapping/image-20240317100413787.png)
+  ![image-20240317100413787](https://VitaElegy.github.io/img/high_glibc_overlapping/image-20240317100413787.png)
 
 - delete部分无懈可击()
 
-  ![img](https://awaqwqa.github.io/img/high_glibc_overlapping/def73b9b58504d503336012d80f05fd4.png)
+  ![img](https://VitaElegy.github.io/img/high_glibc_overlapping/def73b9b58504d503336012d80f05fd4.png)
 
 ## 错误思路
 
@@ -39,7 +39,7 @@ tag :
 
 - 简化后的流程图就是:
 
-  ![img](https://awaqwqa.github.io/img/high_glibc_overlapping/img.png)
+  ![img](https://VitaElegy.github.io/img/high_glibc_overlapping/img.png)
 
 ## 失败原因
 
@@ -51,9 +51,9 @@ tag :
 
   - glic-2.27下
 
-    ![image-20240317101747206](https://awaqwqa.github.io/img/high_glibc_overlapping/image-20240317101747206.png)
+    ![image-20240317101747206](https://VitaElegy.github.io/img/high_glibc_overlapping/image-20240317101747206.png)
 
   - glibc-2.34下
 
-    ![image-20240317101823846](https://awaqwqa.github.io/img/high_glibc_overlapping/image-20240317101823846.png)
+    ![image-20240317101823846](https://VitaElegy.github.io/img/high_glibc_overlapping/image-20240317101823846.png)
 

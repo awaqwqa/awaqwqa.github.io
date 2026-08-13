@@ -70,5 +70,5 @@ tag:
 
 - 由于我们是common commit 也就是正常的commit 所以我们直接进行git revert HEAD即可（因为是最新的commit）
 
-![image-20240317160934372](https://awaqwqa.github.io/img/git_study/image-20240317160934372.png)
+![image-20240317160934372](https://VitaElegy.github.io/img/git_study/image-20240317160934372.png)
 

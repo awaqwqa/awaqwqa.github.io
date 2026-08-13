@@ -4,19 +4,19 @@
 
 - add函数 malloc一个0x18的chunk(0x20) 属性分别对应:size isUsed buff 并且仅在创建的时候可以写入数据 并且没有检测这个index是否在使用 所以我们可以对一个index无限malloc
 
-  ![image-20240418005442527](https://awaqwqa.github.io/img/xyctf_heap_pro/image-20240418005442527.png)
+  ![image-20240418005442527](https://VitaElegy.github.io/img/xyctf_heap_pro/image-20240418005442527.png)
 
 - delete函数 直接free记录信息的chunk和我们的内容体chunk(buff) 并且没有清空
 
-  ![image-20240418005502800](https://awaqwqa.github.io/img/xyctf_heap_pro/image-20240418005502800.png)
+  ![image-20240418005502800](https://VitaElegy.github.io/img/xyctf_heap_pro/image-20240418005502800.png)
 
 - view函数 直接write出size大小的内容 存在泄露
 
-  ![image-20240418005523801](https://awaqwqa.github.io/img/xyctf_heap_pro/image-20240418005523801.png)
+  ![image-20240418005523801](https://VitaElegy.github.io/img/xyctf_heap_pro/image-20240418005523801.png)
 
 - atexit函数
 
-  ![image-20240418131700409](https://awaqwqa.github.io/img/xyctf_heap_pro/image-20240418131700409.png)
+  ![image-20240418131700409](https://VitaElegy.github.io/img/xyctf_heap_pro/image-20240418131700409.png)
 
 ## 大致利用原理:
 
@@ -60,15 +60,15 @@ base_libc = u64(res[5*8:6*8]) -2206944
 
 - chunk进入unsortedbin 
 
-  ![image-20240418132947766](https://awaqwqa.github.io/img/xyctf_heap_pro/image-20240418132947766.png)
+  ![image-20240418132947766](https://VitaElegy.github.io/img/xyctf_heap_pro/image-20240418132947766.png)
 
 - free 8时 unsortedbin进入topchunk 但是此时保留了fd 等信息 我们只需要malloc回来即可
 
-  ![image-20240418133015055](https://awaqwqa.github.io/img/xyctf_heap_pro/image-20240418133015055.png)
+  ![image-20240418133015055](https://VitaElegy.github.io/img/xyctf_heap_pro/image-20240418133015055.png)
 
 - 申请回来
 
-  ![image-20240418133239908](https://awaqwqa.github.io/img/xyctf_heap_pro/image-20240418133239908.png)
+  ![image-20240418133239908](https://VitaElegy.github.io/img/xyctf_heap_pro/image-20240418133239908.png)
 
 - 然后write直接泄露即可
 
@@ -83,7 +83,7 @@ base_libc = u64(res[5*8:6*8]) -2206944
 
 ### 示意图
 
-![image-20240418134333731](https://awaqwqa.github.io/img/xyctf_heap_pro/image-20240418134333731.png)
+![image-20240418134333731](https://VitaElegy.github.io/img/xyctf_heap_pro/image-20240418134333731.png)
 
 - 这样我们就可以向content chunk写入内容劫持head chunk了 原理很简单 但是现在就要想办法触发fastbin中的合并机制了
 
@@ -117,11 +117,11 @@ base_libc = u64(res[5*8:6*8]) -2206944
 
 - 合并之前
 
-  ![image-20240418151026231](https://awaqwqa.github.io/img/xyctf_heap_pro/image-20240418151026231.png)
+  ![image-20240418151026231](https://VitaElegy.github.io/img/xyctf_heap_pro/image-20240418151026231.png)
 
 - 合并后
 
-  ![image-20240418151102406](https://awaqwqa.github.io/img/xyctf_heap_pro/image-20240418151102406.png)
+  ![image-20240418151102406](https://VitaElegy.github.io/img/xyctf_heap_pro/image-20240418151102406.png)
 
 ### 构造fakecchunk
 
@@ -139,7 +139,7 @@ add(14,0x58,b"a"*16+fakechunk["prev_size"]+fakechunk["size"]+fakechunk["chunk_li
 
 - 此时index为5 就是我们劫持的`头chunk` 这里的fd就是我们后面要free的任意chunk
 
-  ![image-20240418151731938](https://awaqwqa.github.io/img/xyctf_heap_pro/image-20240418151731938.png)
+  ![image-20240418151731938](https://VitaElegy.github.io/img/xyctf_heap_pro/image-20240418151731938.png)
 
 ## 泄露tls+0x30
 
@@ -179,7 +179,7 @@ res = view(0)
   *fb = p;
   ```
 
-![image-20240420123457567](https://awaqwqa.github.io/img/xyctf_heap_pro/image-20240420123457567.png)
+![image-20240420123457567](https://VitaElegy.github.io/img/xyctf_heap_pro/image-20240420123457567.png)
 
 - 然后将利用开始构造好的fakechunk进行free
 
@@ -187,7 +187,7 @@ res = view(0)
   delete(5)
   ```
 
-  ![image-20240420123602766](https://awaqwqa.github.io/img/xyctf_heap_pro/image-20240420123602766.png)
+  ![image-20240420123602766](https://VitaElegy.github.io/img/xyctf_heap_pro/image-20240420123602766.png)
 
 ### fd加密机制
 

@@ -3,7 +3,7 @@ home: true
 layout: BlogHome
 icon: home
 title: Blog Home
-bgImage: https://awaqwqa.github.io/aili.png
+bgImage: https://VitaElegy.github.io/aili.png
 heroText: Elegy blog
 tagline: 所以说生命 它璀璨如歌
 heroFullScreen: true

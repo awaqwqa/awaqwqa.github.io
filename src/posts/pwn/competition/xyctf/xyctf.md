@@ -2,7 +2,7 @@
 
 ## BabyGift
 
-![image-20240422202855033](https://awaqwqa.github.io/img/xyctf/image-20240422202855033.png)
+![image-20240422202855033](https://VitaElegy.github.io/img/xyctf/image-20240422202855033.png)
 
 - 利用这里会让字符串地址赋值给rdi 然后我们通过劫持程序流程跑到printf处 利用格式化字符串漏洞就能泄露libc地址 然后触发system函数
 
@@ -66,19 +66,19 @@ ia()
 
 - 简单的堆题 free的时候没有做任何检测 直接`double free` 然后通过指向bss表中 泄露出标准io地址从而推算出libc地址
 
-  ![image-20240422211524070](https://awaqwqa.github.io/img/xyctf/image-20240422211524070.png)
+  ![image-20240422211524070](https://VitaElegy.github.io/img/xyctf/image-20240422211524070.png)
 
 - `double free`后任意地址malloc
 
-  - ![image-20240422211447696](https://awaqwqa.github.io/img/xyctf/image-20240422211447696.png)
+  - ![image-20240422211447696](https://VitaElegy.github.io/img/xyctf/image-20240422211447696.png)
 
 - bss段标准输入输出流io地址信息
 
-  - ![image-20240422211628353](https://awaqwqa.github.io/img/xyctf/image-20240422211628353.png)
+  - ![image-20240422211628353](https://VitaElegy.github.io/img/xyctf/image-20240422211628353.png)
 
 - 通过在gdb中输入libc获取libc基础地址来算和io之间的地址偏差 
 
-  - ![image-20240422211647867](https://awaqwqa.github.io/img/xyctf/image-20240422211647867.png)
+  - ![image-20240422211647867](https://VitaElegy.github.io/img/xyctf/image-20240422211647867.png)
 
 
 算一下偏差就可以了 
@@ -194,7 +194,7 @@ ia()
 
 ### exit hook地址写入栈:
 
-![image-20240422212450209](https://awaqwqa.github.io/img/xyctf/image-20240422212450209.png)
+![image-20240422212450209](https://VitaElegy.github.io/img/xyctf/image-20240422212450209.png)
 
 ### 选择
 
@@ -268,7 +268,7 @@ ia()
 
 > 存在栈的off_by_one漏洞 我们通过提前在栈里面写满backdoor地址 然后通过修改返回地址最后一个字节 来实现栈迁移返回到存放backdoor的栈地址上 只要写满了 概率还挺大 然后就可以在第二次返回的时候触发backdoor函数
 
-![image-20240422213216922](https://awaqwqa.github.io/img/xyctf/image-20240422213216922.png)
+![image-20240422213216922](https://VitaElegy.github.io/img/xyctf/image-20240422213216922.png)
 
 ```python
 import time
@@ -374,9 +374,9 @@ ia()
 
 - 然后发现跳转到执行shellcode的地方的时候寄存器上已经几乎布置好了一些我们需要的值
 
-  ![image-20240422214330654](https://awaqwqa.github.io/img/xyctf/image-20240422214330654.png)
+  ![image-20240422214330654](https://VitaElegy.github.io/img/xyctf/image-20240422214330654.png)
 
-  ![image-20240422214400338](https://awaqwqa.github.io/img/xyctf/image-20240422214400338.png)
+  ![image-20240422214400338](https://VitaElegy.github.io/img/xyctf/image-20240422214400338.png)
 
 - 我们可以利用rep movsb指令 这个指令可以让rsi寄存器的地址开始rcx的字节数据赋值给rdi地址所指的区域 我们可以发现rdx已经有了我们执行shellcode的地址 然后rsi就是我们输入的字符串地址 我们只需要让rdx寄存器的值给rdi 然后触发rep movsb即可 就可以实现shellcode的写入
 - rep movsb是两字节 我们用栈传递参数让rdx赋值给rdi 两字节 刚好四字节 那么我们字符串后面填上getshell的shellcode即可
@@ -1072,19 +1072,19 @@ ia()
 
 - add函数 malloc一个0x18的chunk(0x20) 属性分别对应:size isUsed buff 并且仅在创建的时候可以写入数据 并且没有检测这个index是否在使用 所以我们可以对一个index无限malloc
 
-  ![image-20240418005442527](https://awaqwqa.github.io/img/xyctf/image-20240418005442527.png)
+  ![image-20240418005442527](https://VitaElegy.github.io/img/xyctf/image-20240418005442527.png)
 
 - delete函数 直接free记录信息的chunk和我们的内容体chunk(buff) 并且没有清空
 
-  ![image-20240418005502800](https://awaqwqa.github.io/img/xyctf/image-20240418005502800.png)
+  ![image-20240418005502800](https://VitaElegy.github.io/img/xyctf/image-20240418005502800.png)
 
 - view函数 直接write出size大小的内容 存在泄露
 
-  ![image-20240418005523801](https://awaqwqa.github.io/img/xyctf/image-20240418005523801.png)
+  ![image-20240418005523801](https://VitaElegy.github.io/img/xyctf/image-20240418005523801.png)
 
 - atexit函数
 
-  ![image-20240418131700409](https://awaqwqa.github.io/img/xyctf/image-20240418131700409.png)
+  ![image-20240418131700409](https://VitaElegy.github.io/img/xyctf/image-20240418131700409.png)
 
 ### 大致利用原理:
 
@@ -1128,15 +1128,15 @@ base_libc = u64(res[5*8:6*8]) -2206944
 
 - chunk进入unsortedbin 
 
-  ![image-20240418132947766](https://awaqwqa.github.io/img/xyctf/image-20240418132947766.png)
+  ![image-20240418132947766](https://VitaElegy.github.io/img/xyctf/image-20240418132947766.png)
 
 - free 8时 unsortedbin进入topchunk 但是此时保留了fd 等信息 我们只需要malloc回来即可
 
-  ![image-20240418133015055](https://awaqwqa.github.io/img/xyctf/image-20240418133015055.png)
+  ![image-20240418133015055](https://VitaElegy.github.io/img/xyctf/image-20240418133015055.png)
 
 - 申请回来
 
-  ![image-20240418133239908](https://awaqwqa.github.io/img/xyctf/image-20240418133239908.png)
+  ![image-20240418133239908](https://VitaElegy.github.io/img/xyctf/image-20240418133239908.png)
 
 - 然后write直接泄露即可
 
@@ -1151,7 +1151,7 @@ base_libc = u64(res[5*8:6*8]) -2206944
 
 ##### 示意图
 
-![image-20240418134333731](https://awaqwqa.github.io/img/xyctf/image-20240418134333731.png)
+![image-20240418134333731](https://VitaElegy.github.io/img/xyctf/image-20240418134333731.png)
 
 - 这样我们就可以向content chunk写入内容劫持head chunk了 原理很简单 但是现在就要想办法触发fastbin中的合并机制了
 
@@ -1186,11 +1186,11 @@ base_libc = u64(res[5*8:6*8]) -2206944
 
 - 合并之前
 
-  ![image-20240418151026231](https://awaqwqa.github.io/img/xyctf/image-20240418151026231.png)
+  ![image-20240418151026231](https://VitaElegy.github.io/img/xyctf/image-20240418151026231.png)
 
 - 合并后
 
-  ![image-20240418151102406](https://awaqwqa.github.io/img/xyctf/image-20240418151102406.png)
+  ![image-20240418151102406](https://VitaElegy.github.io/img/xyctf/image-20240418151102406.png)
 
 #### 构造fakecchunk
 
@@ -1208,7 +1208,7 @@ add(14,0x58,b"a"*16+fakechunk["prev_size"]+fakechunk["size"]+fakechunk["chunk_li
 
 - 此时index为5 就是我们劫持的`头chunk` 这里的fd就是我们后面要free的任意chunk
 
-  ![image-20240418151731938](https://awaqwqa.github.io/img/xyctf/image-20240418151731938.png)
+  ![image-20240418151731938](https://VitaElegy.github.io/img/xyctf/image-20240418151731938.png)
 
 #### 泄露tls+0x30
 
@@ -1248,7 +1248,7 @@ res = view(0)
   *fb = p;
   ```
 
-![image-20240420123457567](https://awaqwqa.github.io/img/xyctf/image-20240420123457567.png)
+![image-20240420123457567](https://VitaElegy.github.io/img/xyctf/image-20240420123457567.png)
 
 - 然后将利用开始构造好的fakechunk进行free
 
@@ -1256,7 +1256,7 @@ res = view(0)
   delete(5)
   ```
 
-  ![image-20240420123602766](https://awaqwqa.github.io/img/xyctf/image-20240420123602766.png)
+  ![image-20240420123602766](https://VitaElegy.github.io/img/xyctf/image-20240420123602766.png)
 
 ##### fd加密机制
 

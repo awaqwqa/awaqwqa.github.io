@@ -23,13 +23,13 @@ RSA算法是现今使用最广泛的公钥密码算法，也是号称地球上�
 
 - a为整数 p 为质数 那么就满足
 
-  ![image-20240704014527546](https://awaqwqa.github.io/img/RSA/image-20240704014527546.png)
+  ![image-20240704014527546](https://VitaElegy.github.io/img/RSA/image-20240704014527546.png)
 
   - 当a是p的倍数 所以a的p次方也是p的倍数 所以a就等于0 ----？
 
   - 如果a不是p的质数的话 则
 
-    ![image-20240704014620377](https://awaqwqa.github.io/img/RSA/image-20240704014620377.png)
+    ![image-20240704014620377](https://VitaElegy.github.io/img/RSA/image-20240704014620377.png)
 
 ，欧拉函数，欧拉定理
 
@@ -49,7 +49,7 @@ RSA算法是现今使用最广泛的公钥密码算法，也是号称地球上�
 
   - 判断素数
 
-    ![image-20240704014311077](https://awaqwqa.github.io/img/RSA/image-20240704014311077.png)
+    ![image-20240704014311077](https://VitaElegy.github.io/img/RSA/image-20240704014311077.png)
 
 - 计算`n=p*q`和`z=(p-1)*(q-1)` 
 
@@ -70,7 +70,7 @@ RSA算法是现今使用最广泛的公钥密码算法，也是号称地球上�
 
 实际应用:
 
-![image-20240704024340068](https://awaqwqa.github.io/img/RSA/image-20240704024340068.png)
+![image-20240704024340068](https://VitaElegy.github.io/img/RSA/image-20240704024340068.png)
 
 - 比如加密:ｍe ≡ c (mod n) 公钥: (e n)
   - 所以c = me - kn 

@@ -115,7 +115,7 @@ unlink_chunk (mstate av, mchunkptr p)
 
 > 这里主要是绕过unlink 来实现一个fake chunk的利用 主要运用在
 
-![fakeUnlink](https://awaqwqa.github.io/img/studyHeapVedio/fakeUnlink.png)
+![fakeUnlink](https://VitaElegy.github.io/img/studyHeapVedio/fakeUnlink.png)
 
 - 当我们可以多写一个字节的时候我们可以构造一个`fake chunk`
 

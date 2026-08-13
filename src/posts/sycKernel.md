@@ -205,7 +205,7 @@ ln -s
 
 - 当不同进程要对内存数据进行修改的时候就会触发`写时复制`(cow)机制 才会进行拷贝
 
-  ![image-20240511234355582](https://awaqwqa.github.io/img/sycKernel/image-20240511234355582.png)
+  ![image-20240511234355582](https://VitaElegy.github.io/img/sycKernel/image-20240511234355582.png)
 
   
 
@@ -617,7 +617,7 @@ php内存管理中有三种颗粒度的内存块 也就是chunk page slot 每个
   ```
 
 - 然后__fxprintf又调用`__vfxprintf`函数 然后调用`locked_vfxprintf` 然后调用`__vfwprintf_internal`然后调用对应的vtable函数
-  - ![image-20240602023528121](https://awaqwqa.github.io/img/sycKernel/image-20240602023528121.png)
+  - ![image-20240602023528121](https://VitaElegy.github.io/img/sycKernel/image-20240602023528121.png)
 
 ### printf/puts io调用链(TODO)
 
